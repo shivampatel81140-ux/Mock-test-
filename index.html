@@ -3,88 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEET Quiz Builder</title>
+  <title>NEET Mock Test Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
-<body class="bg-gray-100 p-4">
+<body class="bg-gray-100 min-h-screen p-3">
 
-  <!-- Switcher -->
-  <div class="max-w-xl mx-auto mb-4 flex gap-2">
-    <button onclick="switchMode('entry')" class="flex-1 bg-gray-800 text-white py-2 rounded-lg font-bold">Admin Mode (Add Q)</button>
-    <button onclick="switchMode('exam')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold">Exam Mode (Test)</button>
+  <!-- Setup Section -->
+  <div id="setupSection" class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow">
+    <h2 class="text-xl font-bold mb-4">Setup Your Test</h2>
+    <input type="file" id="pdfInput" class="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-600 file:text-white">
+    
+    <label class="block text-sm font-bold mb-2">Paste Answer Key (A,B,C,D... for 180 questions):</label>
+    <textarea id="answerKeyInput" class="w-full h-24 p-2 border rounded-lg mb-4 text-xs" placeholder="Example: A,B,C,D,A,B..."></textarea>
+    
+    <button id="startBtn" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold">Start Test</button>
   </div>
 
-  <!-- ENTRY MODE -->
-  <div id="entryMode" class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow">
-    <h2 class="text-xl font-bold mb-4">Add Question</h2>
-    <textarea id="qText" placeholder="Question yahan likhein..." class="w-full p-3 border rounded-lg mb-2"></textarea>
-    <input type="text" id="optA" placeholder="Option A" class="w-full p-2 border rounded-lg mb-1">
-    <input type="text" id="optB" placeholder="Option B" class="w-full p-2 border rounded-lg mb-1">
-    <input type="text" id="optC" placeholder="Option C" class="w-full p-2 border rounded-lg mb-1">
-    <input type="text" id="optD" placeholder="Option D" class="w-full p-2 border rounded-lg mb-4">
-    <button onclick="addQ()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold">Add Question to Bank</button>
-    <p id="statusMsg" class="mt-4 text-sm text-green-600 font-bold"></p>
+  <!-- Test Area (Initially Hidden) -->
+  <div id="testArea" class="hidden">
+    <div class="flex flex-col md:flex-row gap-4">
+      <div class="flex-1 bg-white p-2 rounded-xl shadow h-[500px] overflow-auto">
+        <canvas id="pdfCanvas"></canvas>
+      </div>
+      <div class="w-full md:w-1/3 bg-white p-4 rounded-xl shadow">
+        <h3 class="font-bold mb-2">OMR Sheet</h3>
+        <div id="omrGrid" class="grid grid-cols-5 gap-2 mb-4"></div>
+        <div id="optionsPanel" class="border-t pt-4">
+          <p id="currentQInfo" class="font-bold mb-2"></p>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="selectAns('A')" class="btn-opt bg-gray-100 py-2 rounded">A</button>
+            <button onclick="selectAns('B')" class="btn-opt bg-gray-100 py-2 rounded">B</button>
+            <button onclick="selectAns('C')" class="btn-opt bg-gray-100 py-2 rounded">C</button>
+            <button onclick="selectAns('D')" class="btn-opt bg-gray-100 py-2 rounded">D</button>
+          </div>
+        </div>
+        <button onclick="submitTest()" class="w-full mt-4 bg-red-600 text-white py-3 rounded-lg font-bold">Submit Exam</button>
+      </div>
+    </div>
   </div>
 
-  <!-- EXAM MODE -->
-  <div id="examMode" class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow hidden">
-    <div class="flex justify-between items-center mb-4 border-b pb-2">
-      <h2 class="font-bold text-gray-700" id="qNum">Q 1</h2>
-      <div id="timer" class="text-red-600 font-bold">03:00:00</div>
-    </div>
-    <p id="qDisplay" class="text-lg font-medium mb-6"></p>
-    <div id="optionsDisplay" class="space-y-3"></div>
-    <div class="mt-8 flex gap-4">
-      <button onclick="prevQ()" class="flex-1 bg-gray-200 py-3 rounded-lg font-bold">Prev</button>
-      <button onclick="nextQ()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold">Next</button>
-    </div>
+  <!-- Result Section -->
+  <div id="resultSection" class="hidden max-w-xl mx-auto bg-white p-6 rounded-2xl shadow">
+    <h2 class="text-2xl font-bold mb-4">Test Result</h2>
+    <div id="scoreDisplay" class="text-3xl font-bold text-blue-600 mb-4"></div>
+    <div id="reviewGrid" class="space-y-2 text-sm"></div>
+    <button onclick="location.reload()" class="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg">Retry</button>
   </div>
 
   <script>
-    let questions = JSON.parse(localStorage.getItem('neet_questions') || '[]');
-    let current = 0;
+    let pdfDoc = null, userAnswers = {}, correctAnswers = [], currentQ = 1;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    // --- ADMIN FUNCTIONS ---
-    function addQ() {
-      const q = {
-        text: document.getElementById('qText').value,
-        options: [document.getElementById('optA').value, document.getElementById('optB').value, document.getElementById('optC').value, document.getElementById('optD').value]
-      };
-      questions.push(q);
-      localStorage.setItem('neet_questions', JSON.stringify(questions));
-      document.getElementById('statusMsg').innerText = "Question Saved! Total: " + questions.length;
-      document.getElementById('qText').value = ''; // clear
+    document.getElementById('startBtn').onclick = () => {
+        const file = document.getElementById('pdfInput').files[0];
+        const keyRaw = document.getElementById('answerKeyInput').value;
+        correctAnswers = keyRaw.replace(/\s/g, '').split(',');
+        
+        if(!file) return alert("Select PDF");
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            pdfjsLib.getDocument(e.target.result).promise.then(pdf => {
+                pdfDoc = pdf;
+                document.getElementById('setupSection').classList.add('hidden');
+                document.getElementById('testArea').classList.remove('hidden');
+                renderPage(1);
+                createOMR();
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    function createOMR() {
+        const grid = document.getElementById('omrGrid');
+        for(let i=1; i<=180; i++) {
+            const b = document.createElement('button');
+            b.innerText = i; b.className = "p-1 bg-gray-100 text-xs rounded";
+            b.onclick = () => { currentQ = i; updateCurrentQ(); };
+            grid.appendChild(b);
+        }
     }
 
-    // --- EXAM FUNCTIONS ---
-    function switchMode(m) {
-      if(m === 'entry') {
-        document.getElementById('entryMode').classList.remove('hidden');
-        document.getElementById('examMode').classList.add('hidden');
-      } else {
-        document.getElementById('entryMode').classList.add('hidden');
-        document.getElementById('examMode').classList.remove('hidden');
-        renderExam();
-      }
+    function selectAns(ans) {
+        userAnswers[currentQ] = ans;
+        updateCurrentQ();
     }
 
-    function renderExam() {
-      if(questions.length === 0) { alert("Pehle questions add karein!"); return; }
-      const item = questions[current];
-      document.getElementById('qNum').innerText = `Q ${current + 1} / ${questions.length}`;
-      document.getElementById('qDisplay').innerText = item.text;
-      const opDiv = document.getElementById('optionsDisplay');
-      opDiv.innerHTML = '';
-      item.options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.className = "w-full text-left p-4 rounded-xl border border-gray-200 hover:bg-blue-50";
-        btn.innerText = opt;
-        opDiv.appendChild(btn);
-      });
+    function updateCurrentQ() {
+        document.getElementById('currentQInfo').innerText = "Question " + currentQ + ": " + (userAnswers[currentQ] || "Not Attempted");
     }
 
-    function nextQ() { if(current < questions.length -1) { current++; renderExam(); } }
-    function prevQ() { if(current > 0) { current--; renderExam(); } }
+    function submitTest() {
+        let score = 0, right = 0, wrong = 0;
+        let reviewHtml = "";
+        
+        for(let i=1; i<=180; i++) {
+            let user = userAnswers[i];
+            let correct = correctAnswers[i-1];
+            if(user) {
+                if(user === correct) { score += 4; right++; reviewHtml += `<div class='text-green-600'>Q${i}: Right (+4)</div>`; }
+                else { score -= 1; wrong++; reviewHtml += `<div class='text-red-600'>Q${i}: Wrong! Correct was ${correct} (-1)</div>`; }
+            }
+        }
+        document.getElementById('testArea').classList.add('hidden');
+        document.getElementById('resultSection').classList.remove('hidden');
+        document.getElementById('scoreDisplay').innerText = "Total Marks: " + score;
+        document.getElementById('reviewGrid').innerHTML = reviewHtml;
+    }
+
+    function renderPage(num) {
+        pdfDoc.getPage(num).then(page => {
+            const canvas = document.getElementById('pdfCanvas');
+            const context = canvas.getContext('2d');
+            const viewport = page.getViewport({ scale: 1.5 });
+            canvas.height = viewport.height; canvas.width = viewport.width;
+            page.render({ canvasContext: context, viewport: viewport });
+        });
+    }
   </script>
 </body>
 </html>
