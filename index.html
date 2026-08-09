@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NEET Mock Test Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center p-3">
 
@@ -51,18 +50,15 @@
   <!-- Main Test Area -->
   <div id="testArea" class="w-full max-w-6xl hidden flex-col md:flex-row gap-4">
     
-    <!-- Left: Canvas-based PDF Rendering Window -->
+    <!-- Left: Native PDF Viewer -->
     <div class="w-full md:w-3/5 bg-white p-2 rounded-xl shadow h-[580px] flex flex-col">
-      <div class="flex justify-between items-center px-2 py-1 bg-gray-50 border-b rounded-t mb-2">
-        <span class="text-xs font-bold text-gray-600">📄 PDF Paper Viewer</span>
-        <div class="space-x-2">
-          <button id="prevPage" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded font-bold hover:bg-blue-200">← Prev Page</button>
-          <span id="pageNum" class="text-xs font-bold text-gray-700">Page 1 / 1</span>
-          <button id="nextPage" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded font-bold hover:bg-blue-200">Next Page →</button>
-        </div>
+      <div class="px-2 py-1 bg-gray-50 border-b rounded-t mb-2">
+        <span class="text-xs font-bold text-gray-600">📄 PDF Paper Window (Scroll to View Questions)</span>
       </div>
-      <div class="w-full flex-1 overflow-auto bg-gray-200 rounded p-1 flex justify-center">
-        <canvas id="pdfCanvas" class="shadow rounded bg-white my-auto"></canvas>
+      <div class="w-full flex-1 rounded overflow-hidden bg-gray-100">
+        <object id="pdfEmbed" type="application/pdf" data="" class="w-full h-full">
+          <p class="p-4 text-center text-sm text-gray-500">Aapka browser PDF preview support nahi kar raha hai.</p>
+        </object>
       </div>
     </div>
 
@@ -119,18 +115,12 @@
   </div>
 
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
     let totalQuestions = 180;
     let currentQ = 1;
     let answers = {};
     let timerInterval = null;
     let timeRemaining = 10800;
-
-    let pdfDoc = null;
-    let pageNum = 1;
-    let canvas = document.getElementById('pdfCanvas');
-    let ctx = canvas.getContext('2d');
+    let pdfBlobUrl = null;
 
     const pdfInput = document.getElementById('pdfInput');
     const fileNameDisplay = document.getElementById('fileName');
@@ -139,18 +129,9 @@
     pdfInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
         const file = e.target.files[0];
+        pdfBlobUrl = URL.createObjectURL(file);
         fileNameDisplay.textContent = `Selected: ${file.name}`;
         startTestBtn.classList.remove('hidden');
-
-        const fileReader = new FileReader();
-        fileReader.onload = function () {
-          const typedarray = new Uint8Array(this.result);
-          pdfjsLib.getDocument(typedarray).promise.then(pdf => {
-            pdfDoc = pdf;
-            pageNum = 1;
-          });
-        };
-        fileReader.readAsArrayBuffer(file);
       }
     });
 
@@ -164,37 +145,13 @@
       document.getElementById('testArea').classList.add('flex');
       document.getElementById('timerBox').classList.remove('hidden');
 
-      if (pdfDoc) renderPage(pageNum);
+      if (pdfBlobUrl) {
+        document.getElementById('pdfEmbed').data = pdfBlobUrl;
+      }
+
       initPalette();
       loadActiveQ();
       startTimer();
-    });
-
-    function renderPage(num) {
-      pdfDoc.getPage(num).then(page => {
-        const viewport = page.getViewport({ scale: 1.2 });
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: viewport
-        };
-        page.render(renderContext);
-        document.getElementById('pageNum').textContent = `Page ${num} / ${pdfDoc.numPages}`;
-      });
-    }
-
-    document.getElementById('prevPage').addEventListener('click', () => {
-      if (pageNum <= 1) return;
-      pageNum--;
-      renderPage(pageNum);
-    });
-
-    document.getElementById('nextPage').addEventListener('click', () => {
-      if (pageNum >= pdfDoc.numPages) return;
-      pageNum++;
-      renderPage(pageNum);
     });
 
     function initPalette() {
