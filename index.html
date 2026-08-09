@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEET Smart Auto-Detect Mock Test Portal</title>
+  <title>NEET Smart Mock Test Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
@@ -32,11 +32,11 @@
     <div class="grid grid-cols-2 gap-2 mb-3">
       <div>
         <label class="block text-xs font-bold text-gray-600 mb-1">Total Questions:</label>
-        <input type="number" id="totalQInput" value="180" min="1" max="200" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-bold focus:ring-2 focus:ring-blue-500" placeholder="E.g. 63">
+        <input type="number" id="totalQInput" value="180" min="1" max="200" class="w-full p-2 border rounded-xl text-xs bg-white font-bold text-blue-800 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="E.g. 63">
       </div>
       <div>
         <label class="block text-xs font-bold text-gray-600 mb-1">Total Time (Minutes):</label>
-        <input type="number" id="timeDurationInput" value="180" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-bold focus:ring-2 focus:ring-blue-500" placeholder="Minutes">
+        <input type="number" id="timeDurationInput" value="180" class="w-full p-2 border rounded-xl text-xs bg-white font-bold text-blue-800 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Minutes">
       </div>
     </div>
 
@@ -153,7 +153,10 @@
   </div>
 
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    // Inline Worker Setup to avoid Vercel/CDN Cross-Origin Worker Restrictions
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    }
 
     let pdfDoc = null;
     let userAnswers = {};
@@ -174,21 +177,24 @@
       document.getElementById('bioTime').innerText = bio + " Mins";
     }
 
-    function setDetectedQuestions(count) {
+    function applyQuestionCount(count, sourceText) {
       document.getElementById('totalQInput').value = count;
       document.getElementById('timeDurationInput').value = count;
-      document.getElementById('detectionStatus').innerText = `✅ Set to ${count} Questions & ${count} Mins!`;
+      document.getElementById('detectionStatus').innerText = sourceText || `✅ Set to ${count} Questions & ${count} Mins!`;
       updateTimeBreakdown();
     }
 
-    document.getElementById('timeDurationInput').addEventListener('input', updateTimeBreakdown);
+    // Dynamic Reactive Event Listeners for Manual Box
     document.getElementById('totalQInput').addEventListener('input', function(e) {
-      let val = parseInt(e.target.value) || 0;
+      let val = parseInt(e.target.value) || 1;
       document.getElementById('timeDurationInput').value = val;
+      document.getElementById('detectionStatus').innerText = `✏️ Custom Set: ${val} Questions & ${val} Mins!`;
       updateTimeBreakdown();
     });
 
-    // Advanced PDF Question Detection System
+    document.getElementById('timeDurationInput').addEventListener('input', updateTimeBreakdown);
+
+    // Advanced PDF Question Scanner
     document.getElementById('pdfInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -198,7 +204,7 @@
       const reader = new FileReader();
       reader.onload = function(evt) {
         const typedarray = new Uint8Array(evt.target.result);
-        pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+        pdfjsLib.getDocument({ data: typedarray }).promise.then(pdf => {
           let textPromises = [];
           for (let i = 1; i <= pdf.numPages; i++) {
             textPromises.push(pdf.getPage(i).then(page => {
@@ -208,8 +214,8 @@
           Promise.all(textPromises).then(fullTextArray => {
             let fullText = fullTextArray.join(" ");
             
-            // Multiple pattern matcher for Question numbers
-            let matches = fullText.match(/(?:Q(?:uestion)?[\.\s:-]*|^\s*)(\d{1,3})(?=[\.\-\)\s:]|$)/gi);
+            // Multi-Pattern Search for Q.1 / Q1 / 1. / Question 1
+            let matches = fullText.match(/(?:Q(?:uestion)?[\.\s:-]*|^\s*|\n\s*)(\d{1,3})(?=[\.\-\)\s:]|$)/gi);
             
             let detectedMax = 0;
             if (matches) {
@@ -220,13 +226,13 @@
             }
 
             if (detectedMax > 0) {
-              setDetectedQuestions(detectedMax);
+              applyQuestionCount(detectedMax, `✅ Auto-detected ${detectedMax} Questions in PDF!`);
             } else {
-              document.getElementById('detectionStatus').innerText = "⚠️ Auto-detect fallback: Enter questions manually below if needed.";
+              document.getElementById('detectionStatus').innerText = "💡 Scanned PDF detected! Type total questions in box above (e.g. 63).";
             }
           });
         }).catch(err => {
-          document.getElementById('detectionStatus').innerText = "⏱️ Smart Time Distribution:";
+          document.getElementById('detectionStatus').innerText = "💡 Type total questions in box above (e.g. 63).";
         });
       };
       reader.readAsArrayBuffer(file);
@@ -247,7 +253,7 @@
         const reader = new FileReader();
         reader.onload = function(evt) {
           const typedarray = new Uint8Array(evt.target.result);
-          pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+          pdfjsLib.getDocument({ data: typedarray }).promise.then(pdf => {
             let countPromises = [];
             for (let i = 1; i <= pdf.numPages; i++) {
               countPromises.push(pdf.getPage(i).then(page => {
@@ -265,7 +271,7 @@
       }
     });
 
-    // Answer Key Manual Paste Listener
+    // Manual Paste Key Listener
     document.getElementById('answerKeyInput').addEventListener('input', function(e) {
       processKeyText(e.target.value);
     });
@@ -274,7 +280,7 @@
       document.getElementById('answerKeyInput').value = rawText;
       const matches = rawText.match(/[A-Da-d]/g);
       if (matches && matches.length > 0) {
-        setDetectedQuestions(matches.length);
+        applyQuestionCount(matches.length, `🔑 Answer Key Loaded: ${matches.length} Questions`);
       }
     }
 
@@ -287,7 +293,7 @@
         return;
       }
 
-      // Enforce Question count and Duration from input fields
+      // Hard-lock total questions & timer duration from input boxes
       totalQuestions = parseInt(document.getElementById('totalQInput').value) || 180;
       let durationMins = parseInt(document.getElementById('timeDurationInput').value) || totalQuestions;
       timeRemaining = durationMins * 60;
@@ -304,7 +310,7 @@
 
       reader.onload = function (e) {
         const typedarray = new Uint8Array(e.target.result);
-        pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+        pdfjsLib.getDocument({ data: typedarray }).promise.then(pdf => {
           pdfDoc = pdf;
           document.getElementById('setupSection').classList.add('hidden');
           document.getElementById('testArea').classList.remove('hidden');
