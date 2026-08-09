@@ -1,24 +1,90 @@
- <!DOCTYPE html>
- <html lang="en">
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Quiz Portal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-
-</head><body class="bg-gray-100 min-h-screen p-4">
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md p-6 mt-10">
-        <h1 class="text-2xl font-bold text-center text-blue-600 mb-4">Quiz Test Portal</h1>
-        <p class="text-gray-600 text-center mb-6">Test paper upload karein aur quiz shuru karein.</p>
-        <div class="border-2 border-dashed border-gray-300 p-6 text-center rounded-lg mb-4">
-            <input type="file" id="pdfInput" accept=".pdf" class="hidden" />
-            <label for="pdfInput" class="bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700">
-                Upload PDF Paper
-            </label>
-        </div>
-        <button class="w-full bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700">
-            Start Test
-        </button>
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Test Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white p-6 rounded-xl shadow-md w-full max-w-md">
+    <h1 class="text-2xl font-bold text-center text-blue-600 mb-4">Quiz Test Portal</h1>
+    <p class="text-gray-600 text-center mb-6">Test paper upload karein aur quiz shuru karein.</p>
+    
+    <div class="border-2 border-dashed border-gray-300 p-6 text-center rounded-lg mb-4">
+      <input type="file" id="pdfInput" accept=".pdf" class="hidden" />
+      <label for="pdfInput" class="bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700 inline-block">
+        Upload PDF Paper
+      </label>
+      <p id="fileName" class="text-sm text-green-600 mt-2 font-medium"></p>
     </div>
+
+    <button id="startBtn" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700">
+      Start Test
+    </button>
+
+    <div id="quizSection" class="mt-6 hidden border-t pt-4">
+      <h2 class="text-lg font-bold text-gray-800 mb-2">Test Paper Content:</h2>
+      <div id="pdfContent" class="text-sm text-gray-700 bg-gray-50 p-3 rounded max-h-60 overflow-y-auto whitespace-pre-wrap"></div>
+    </div>
+  </div>
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    const pdfInput = document.getElementById('pdfInput');
+    const fileNameDisplay = document.getElementById('fileName');
+    const startBtn = document.getElementById('startBtn');
+    const quizSection = document.getElementById('quizSection');
+    const pdfContent = document.getElementById('pdfContent');
+
+    let selectedFile = null;
+
+    pdfInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        selectedFile = e.target.files[0];
+        fileNameDisplay.textContent = `Selected File: ${selectedFile.name}`;
+      }
+    });
+
+    startBtn.addEventListener('click', () => {
+      if (!selectedFile) {
+        alert('Pehle ek PDF file upload karein!');
+        return;
+      }
+
+      startBtn.textContent = 'Processing PDF...';
+
+      const fileReader = new FileReader();
+      fileReader.onload = function () {
+        const typedarray = new Uint8Array(this.result);
+
+        pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+          let textPromises = [];
+          for (let i = 1; i <= pdf.numPages; i++) {
+            textPromises.push(
+              pdf.getPage(i).then(page => {
+                return page.getTextContent().then(textContent => {
+                  return textContent.items.map(item => item.str).join(' ');
+                });
+              })
+            );
+          }
+
+          Promise.all(textPromises).then(pagesText => {
+            pdfContent.textContent = pagesText.join('\n\n--- Page Break ---\n\n');
+            quizSection.classList.remove('hidden');
+            startBtn.textContent = 'Start Test';
+          });
+        }).catch(err => {
+          alert('PDF read karne me error aaya: ' + err.message);
+          startBtn.textContent = 'Start Test';
+        });
+      };
+
+      fileReader.readAsArrayBuffer(selectedFile);
+    });
+  </script>
 </body>
-          </html>
+</html>
