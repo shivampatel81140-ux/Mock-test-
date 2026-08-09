@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEET Adaptive Mock Test Portal</title>
+  <title>NEET Smart Mock Test Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
@@ -32,15 +32,21 @@
     <div class="grid grid-cols-2 gap-2 mb-3">
       <div>
         <label class="block text-xs font-bold text-gray-600 mb-1">Total Questions:</label>
-        <select id="totalQSelect" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-bold">
-          <option value="45">45 Questions (Chapter Test)</option>
-          <option value="90">90 Questions (Half Mock)</option>
-          <option value="180" selected>180 Questions (Full Mock)</option>
-        </select>
+        <input type="number" id="totalQInput" value="180" min="1" max="200" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-bold" placeholder="E.g. 10, 45, 180">
       </div>
       <div>
-        <label class="block text-xs font-bold text-gray-600 mb-1">Timer (Minutes):</label>
+        <label class="block text-xs font-bold text-gray-600 mb-1">Total Time (Minutes):</label>
         <input type="number" id="timeDurationInput" value="180" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-bold" placeholder="Minutes">
+      </div>
+    </div>
+
+    <!-- Suggested Time Breakdown Info -->
+    <div id="timeBreakdownBox" class="p-2.5 bg-blue-50 border border-blue-200 rounded-xl mb-3 text-[11px] text-blue-900">
+      <b>⏱️ Smart Subject Time Distribution:</b>
+      <div class="flex justify-between mt-1 text-[10px]">
+        <span>⚛️ Physics: <b id="phyTime">72 Mins</b> (40%)</span>
+        <span>🧪 Chem: <b id="chemTime">63 Mins</b> (35%)</span>
+        <span>🧬 Bio: <b id="bioTime">45 Mins</b> (25%)</span>
       </div>
     </div>
 
@@ -157,9 +163,22 @@
     let timeRemaining = 10800;
     let timerInterval = null;
 
-    // Auto update timer default when total question dropdown changes
-    document.getElementById('totalQSelect').addEventListener('change', function(e) {
-      document.getElementById('timeDurationInput').value = e.target.value;
+    function updateTimeBreakdown() {
+      let totalMins = parseInt(document.getElementById('timeDurationInput').value) || 0;
+      let phy = Math.round(totalMins * 0.40);
+      let chem = Math.round(totalMins * 0.35);
+      let bio = Math.max(0, totalMins - phy - chem);
+
+      document.getElementById('phyTime').innerText = phy + " Mins";
+      document.getElementById('chemTime').innerText = chem + " Mins";
+      document.getElementById('bioTime').innerText = bio + " Mins";
+    }
+
+    document.getElementById('timeDurationInput').addEventListener('input', updateTimeBreakdown);
+    document.getElementById('totalQInput').addEventListener('input', function(e) {
+      let val = parseInt(e.target.value) || 1;
+      document.getElementById('timeDurationInput').value = val;
+      updateTimeBreakdown();
     });
 
     // Answer Key File Listener
@@ -200,8 +219,9 @@
       const matches = rawText.match(/[A-Da-d]/g);
       if (matches && matches.length > 0) {
         let count = matches.length;
-        document.getElementById('totalQSelect').value = count > 90 ? 180 : (count > 45 ? 90 : count);
-        document.getElementById('timeDurationInput').value = document.getElementById('totalQSelect').value;
+        document.getElementById('totalQInput').value = count;
+        document.getElementById('timeDurationInput').value = count;
+        updateTimeBreakdown();
       }
     }
 
@@ -214,7 +234,7 @@
         return;
       }
 
-      totalQuestions = parseInt(document.getElementById('totalQSelect').value) || 180;
+      totalQuestions = parseInt(document.getElementById('totalQInput').value) || 180;
       let durationMins = parseInt(document.getElementById('timeDurationInput').value) || totalQuestions;
       timeRemaining = durationMins * 60;
 
@@ -307,14 +327,17 @@
     }
 
     function jumpToQ(qNum) {
+      if (qNum > totalQuestions) qNum = totalQuestions;
       currentQ = qNum;
       updateActiveQ();
       document.getElementById('omrGridModal').classList.add('hidden');
       hideResultModal();
 
       if (pdfDoc && pdfDoc.numPages) {
-        let estimatedPage = Math.min(Math.ceil((qNum / totalQuestions) * pdfDoc.numPages), pdfDoc.numPages);
-        let targetCanvas = document.getElementById("pdf-page-" + estimatedPage);
+        let pageRatio = (qNum - 1) / totalQuestions;
+        let targetPageNum = Math.min(Math.floor(pageRatio * pdfDoc.numPages) + 1, pdfDoc.numPages);
+        let targetCanvas = document.getElementById("pdf-page-" + targetPageNum);
+        
         if (targetCanvas) {
           targetCanvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -423,6 +446,8 @@
 
       document.getElementById('reviewGrid').innerHTML = reviewHtml;
     }
+
+    updateTimeBreakdown();
   </script>
 </body>
 </html>
