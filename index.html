@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEET Auto-Detect Mock Test Portal</title>
+  <title>NEET Smart Auto-Detect Mock Test Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
@@ -32,11 +32,11 @@
     <div class="grid grid-cols-2 gap-2 mb-3">
       <div>
         <label class="block text-xs font-bold text-gray-600 mb-1">Total Questions:</label>
-        <input type="number" id="totalQInput" value="180" min="1" max="200" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-bold" placeholder="E.g. 63">
+        <input type="number" id="totalQInput" value="180" min="1" max="200" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-bold focus:ring-2 focus:ring-blue-500" placeholder="E.g. 63">
       </div>
       <div>
         <label class="block text-xs font-bold text-gray-600 mb-1">Total Time (Minutes):</label>
-        <input type="number" id="timeDurationInput" value="180" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-bold" placeholder="Minutes">
+        <input type="number" id="timeDurationInput" value="180" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-bold focus:ring-2 focus:ring-blue-500" placeholder="Minutes">
       </div>
     </div>
 
@@ -177,17 +177,23 @@
     function setDetectedQuestions(count) {
       document.getElementById('totalQInput').value = count;
       document.getElementById('timeDurationInput').value = count;
-      document.getElementById('detectionStatus').innerText = `✅ Detected ${count} Questions & Set ${count} Mins!`;
+      document.getElementById('detectionStatus').innerText = `✅ Set to ${count} Questions & ${count} Mins!`;
       updateTimeBreakdown();
     }
 
     document.getElementById('timeDurationInput').addEventListener('input', updateTimeBreakdown);
-    document.getElementById('totalQInput').addEventListener('input', updateTimeBreakdown);
+    document.getElementById('totalQInput').addEventListener('input', function(e) {
+      let val = parseInt(e.target.value) || 0;
+      document.getElementById('timeDurationInput').value = val;
+      updateTimeBreakdown();
+    });
 
-    // Auto Scan PDF for Question Numbers
+    // Advanced PDF Question Detection System
     document.getElementById('pdfInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
+
+      document.getElementById('detectionStatus').innerText = "⏳ Scanning PDF text...";
 
       const reader = new FileReader();
       reader.onload = function(evt) {
@@ -201,7 +207,9 @@
           }
           Promise.all(textPromises).then(fullTextArray => {
             let fullText = fullTextArray.join(" ");
-            let matches = fullText.match(/(?:Q(?:uestion)?\s*[\.\-:]?\s*|^\s*)(\d{1,3})(?=\s*[\.\-\)\:]|\s+[A-Z])/gi);
+            
+            // Multiple pattern matcher for Question numbers
+            let matches = fullText.match(/(?:Q(?:uestion)?[\.\s:-]*|^\s*)(\d{1,3})(?=[\.\-\)\s:]|$)/gi);
             
             let detectedMax = 0;
             if (matches) {
@@ -213,8 +221,12 @@
 
             if (detectedMax > 0) {
               setDetectedQuestions(detectedMax);
+            } else {
+              document.getElementById('detectionStatus').innerText = "⚠️ Auto-detect fallback: Enter questions manually below if needed.";
             }
           });
+        }).catch(err => {
+          document.getElementById('detectionStatus').innerText = "⏱️ Smart Time Distribution:";
         });
       };
       reader.readAsArrayBuffer(file);
@@ -253,6 +265,11 @@
       }
     });
 
+    // Answer Key Manual Paste Listener
+    document.getElementById('answerKeyInput').addEventListener('input', function(e) {
+      processKeyText(e.target.value);
+    });
+
     function processKeyText(rawText) {
       document.getElementById('answerKeyInput').value = rawText;
       const matches = rawText.match(/[A-Da-d]/g);
@@ -270,6 +287,7 @@
         return;
       }
 
+      // Enforce Question count and Duration from input fields
       totalQuestions = parseInt(document.getElementById('totalQInput').value) || 180;
       let durationMins = parseInt(document.getElementById('timeDurationInput').value) || totalQuestions;
       timeRemaining = durationMins * 60;
