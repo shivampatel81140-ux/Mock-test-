@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEET Smart Mock Test Portal</title>
+  <title>NEET Mock Test Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
@@ -16,7 +16,7 @@
       <p id="qIndicator" class="text-xs font-semibold text-gray-500">Full Paper View</p>
     </div>
     <div id="timerBox" class="hidden">
-      <span id="timer" class="text-sm font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">00:00:00</span>
+      <span id="timer" class="text-sm font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">03:00:00</span>
     </div>
   </header>
 
@@ -26,30 +26,8 @@
     
     <!-- Question Paper File Input -->
     <label class="block text-xs font-bold text-gray-600 mb-1">1. Select Question Paper (PDF):</label>
-    <input type="file" id="pdfInput" accept=".pdf" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700">
+    <input type="file" id="pdfInput" accept=".pdf" class="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700">
     
-    <!-- Dynamic Test Settings -->
-    <div class="grid grid-cols-2 gap-2 mb-3">
-      <div>
-        <label class="block text-xs font-bold text-gray-600 mb-1">Total Questions:</label>
-        <input type="number" id="totalQInput" value="180" min="1" max="200" class="w-full p-2 border rounded-xl text-xs bg-white font-bold text-blue-800 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="E.g. 63">
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-gray-600 mb-1">Total Time (Minutes):</label>
-        <input type="number" id="timeDurationInput" value="180" class="w-full p-2 border rounded-xl text-xs bg-white font-bold text-blue-800 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Minutes">
-      </div>
-    </div>
-
-    <!-- Suggested Time Breakdown Info -->
-    <div id="timeBreakdownBox" class="p-2.5 bg-blue-50 border border-blue-200 rounded-xl mb-3 text-[11px] text-blue-900">
-      <b id="detectionStatus">⏱️ Smart Time Distribution:</b>
-      <div id="breakdownDetails" class="flex justify-between mt-1 text-[10px]">
-        <span>⚛️ Physics: <b id="phyTime">72 Mins</b> (40%)</span>
-        <span>🧪 Chem: <b id="chemTime">63 Mins</b> (35%)</span>
-        <span>🧬 Bio: <b id="bioTime">45 Mins</b> (25%)</span>
-      </div>
-    </div>
-
     <!-- Answer Key File Input -->
     <label class="block text-xs font-bold text-gray-600 mb-1">2. Upload Answer Key File (PDF / TXT - Optional):</label>
     <input type="file" id="keyFileInput" accept=".pdf,.txt" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-purple-600 file:text-white file:font-semibold hover:file:bg-purple-700">
@@ -57,27 +35,34 @@
     <div class="text-center my-2 text-xs font-bold text-gray-400">--- YA PHIR PASTE KAREIN ---</div>
 
     <!-- Manual Answer Key Textarea -->
-    <label class="block text-xs font-bold text-gray-600 mb-1">Paste Answer Key (A,B,C,D...):</label>
+    <label class="block text-xs font-bold text-gray-600 mb-1">Paste Answer Key (Comma Separated A,B,C,D...):</label>
     <textarea id="answerKeyInput" class="w-full h-20 p-3 border rounded-xl mb-4 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Example: A,B,C,D,A,C,D,B..."></textarea>
     
     <button id="startBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow-md transition">
-      🚀 Start Test
+      🚀 Start Test (Full Screen View)
     </button>
   </div>
 
   <!-- Main Test Area -->
   <div id="testArea" class="hidden flex-col items-center pb-48">
     
+    <!-- Full-Width Scrollable PDF Container -->
     <div id="pdfViewerContainer" class="w-full max-w-3xl flex flex-col items-center space-y-3 p-2 my-2">
-      <!-- PDF Pages -->
+      <!-- PDF Pages rendered here -->
     </div>
 
-    <!-- Question Palette Modal -->
+    <!-- Full OMR Grid Modal Overlay -->
     <div id="omrGridModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div class="bg-white w-full max-w-lg rounded-2xl p-4 max-h-[80vh] flex flex-col shadow-2xl">
         <div class="flex justify-between items-center mb-3 border-b pb-2">
-          <h3 class="font-bold text-gray-800 text-sm" id="paletteTitle">Question Palette</h3>
+          <h3 class="font-bold text-gray-800 text-sm">Question Palette (1-180)</h3>
           <button onclick="toggleOmrGrid()" class="text-gray-500 font-bold text-lg hover:text-black">&times;</button>
+        </div>
+        
+        <div class="flex justify-around mb-3 text-xs">
+          <button onclick="jumpToQ(1)" class="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-lg font-bold">Physics (Q1)</button>
+          <button onclick="jumpToQ(46)" class="bg-purple-100 text-purple-800 px-2.5 py-1 rounded-lg font-bold">Chemistry (Q46)</button>
+          <button onclick="jumpToQ(91)" class="bg-green-100 text-green-800 px-2.5 py-1 rounded-lg font-bold">Biology (Q91)</button>
         </div>
 
         <div id="gridNumbers" class="grid grid-cols-6 sm:grid-cols-10 gap-2 overflow-y-auto p-1 text-xs"></div>
@@ -88,10 +73,10 @@
       </div>
     </div>
 
-    <!-- Control Bar -->
+    <!-- Floating Bottom Control Bar -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-2xl z-40 max-w-3xl mx-auto rounded-t-2xl">
       <div class="flex justify-between items-center mb-2 px-1">
-        <span id="activeQText" class="text-sm font-bold text-blue-700">Question 1</span>
+        <span id="activeQText" class="text-sm font-bold text-blue-700">Question 1 / 180</span>
         <div class="space-x-1 flex items-center">
           <button id="showResultBtn" onclick="reopenResultModal()" class="hidden bg-purple-600 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">
             📊 View Result
@@ -124,7 +109,8 @@
       
       <button onclick="hideResultModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8 font-bold text-gray-700">&times;</button>
       
-      <h2 class="text-2xl font-bold mb-1 text-center text-gray-800">Test Result 🎉</h2>
+      <h2 class="text-2xl font-bold mb-1 text-center text-gray-800">NEET Test Result 🎉</h2>
+      <p class="text-center text-xs text-gray-500 mb-4">(Tap on any Question to view it in Paper)</p>
 
       <div id="scoreDisplay" class="text-3xl font-extrabold text-blue-600 text-center mb-4"></div>
       
@@ -134,8 +120,74 @@
         <div class="text-gray-600" id="unattCount">Left: 0</div>
       </div>
 
-      <h3 class="font-bold text-sm text-gray-700 mb-2">📝 Complete Chapter & Topic Analysis</h3>
-      <div id="reviewGrid" class="max-h-60 overflow-y-auto space-y-2 text-xs p-2 border rounded-xl bg-gray-50 mb-4"></div>
+      <!-- Subject Wise Cards -->
+      <h3 class="font-bold text-sm text-gray-700 mb-2">📊 Subject-Wise Overview</h3>
+      <div class="grid grid-cols-3 gap-2 mb-5 text-xs">
+        <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200">
+          <div class="font-bold text-blue-800 mb-1 text-center">Physics</div>
+          <div id="phyScore" class="font-bold text-blue-600 text-center text-sm">0/180</div>
+          <div class="text-[10px] mt-1 text-gray-600">
+            <div>✅ Right: <span id="phyR" class="font-bold text-green-600">0</span></div>
+            <div>❌ Wrong: <span id="phyW" class="font-bold text-red-600">0</span></div>
+            <div>⏸️ Left: <span id="phyL" class="font-bold text-gray-600">0</span></div>
+          </div>
+        </div>
+        <div class="bg-purple-50 p-2.5 rounded-xl border border-purple-200">
+          <div class="font-bold text-purple-800 mb-1 text-center">Chemistry</div>
+          <div id="chemScore" class="font-bold text-purple-600 text-center text-sm">0/180</div>
+          <div class="text-[10px] mt-1 text-gray-600">
+            <div>✅ Right: <span id="chemR" class="font-bold text-green-600">0</span></div>
+            <div>❌ Wrong: <span id="chemW" class="font-bold text-red-600">0</span></div>
+            <div>⏸️ Left: <span id="chemL" class="font-bold text-gray-600">0</span></div>
+          </div>
+        </div>
+        <div class="bg-green-50 p-2.5 rounded-xl border border-green-200">
+          <div class="font-bold text-green-800 mb-1 text-center">Biology</div>
+          <div id="bioScore" class="font-bold text-green-600 text-center text-sm">0/360</div>
+          <div class="text-[10px] mt-1 text-gray-600">
+            <div>✅ Right: <span id="bioR" class="font-bold text-green-600">0</span></div>
+            <div>❌ Wrong: <span id="bioW" class="font-bold text-red-600">0</span></div>
+            <div>⏸️ Left: <span id="bioL" class="font-bold text-gray-600">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEPARATE SUBJECT-WISE ANALYSIS ACCORDIONS -->
+      <h3 class="font-bold text-sm text-gray-700 mb-2">🔍 Subject-Wise Detailed Analysis (Click Q to Inspect)</h3>
+      <div class="space-y-2 mb-6">
+        
+        <!-- Physics Analysis -->
+        <div class="border border-blue-200 rounded-xl overflow-hidden">
+          <button onclick="toggleSubjectBox('phyAnalysisBox', 'phyArrow')" class="w-full bg-blue-50 text-blue-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+            <span>⚛️ Physics Analysis (Q1 - Q45)</span>
+            <span id="phyArrow">▼</span>
+          </button>
+          <div id="phyAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+        </div>
+
+        <!-- Chemistry Analysis -->
+        <div class="border border-purple-200 rounded-xl overflow-hidden">
+          <button onclick="toggleSubjectBox('chemAnalysisBox', 'chemArrow')" class="w-full bg-purple-50 text-purple-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+            <span>🧪 Chemistry Analysis (Q46 - Q90)</span>
+            <span id="chemArrow">▼</span>
+          </button>
+          <div id="chemAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+        </div>
+
+        <!-- Biology Analysis -->
+        <div class="border border-green-200 rounded-xl overflow-hidden">
+          <button onclick="toggleSubjectBox('bioAnalysisBox', 'bioArrow')" class="w-full bg-green-50 text-green-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+            <span>🧬 Biology Analysis (Q91 - Q180)</span>
+            <span id="bioArrow">▼</span>
+          </button>
+          <div id="bioAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+        </div>
+
+      </div>
+
+      <!-- Question Review List -->
+      <h3 class="font-bold text-sm text-gray-700 mb-2">📝 Complete Question Review</h3>
+      <div id="reviewGrid" class="max-h-48 overflow-y-auto space-y-1.5 text-xs p-2 border rounded-xl bg-gray-50 mb-4"></div>
       
       <div class="flex gap-2">
         <button onclick="hideResultModal()" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-300 shadow">
@@ -150,9 +202,7 @@
   </div>
 
   <script>
-    if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-    }
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
     let pdfDoc = null;
     let userAnswers = {};
@@ -161,130 +211,60 @@
     let totalQuestions = 180;
     let timeRemaining = 10800;
     let timerInterval = null;
-    let extractedPdfText = "";
 
-    // Global Master Taxonomy for Auto-Detection across All Subjects
-    const masterTaxonomy = [
-      // Physics
-      { kw: ["resistance", "resistor", "ohm", "current", "circuit", "potentiometer", "drift velocity", "wheatstone", "kirchhoff", "meter bridge", "terminal voltage"], sub: "Physics", ch: "Current Electricity", top: "Circuit Analysis & Ohm's Law" },
-      { kw: ["charge", "coulomb", "electric field", "dipole", "flux", "gauss"], sub: "Physics", ch: "Electrostatics", top: "Electric Charges & Field" },
-      { kw: ["capacitor", "capacitance", "dielectric", "potential"], sub: "Physics", ch: "Electrostatic Potential & Capacitance", top: "Capacitors & Potential" },
-      { kw: ["magnetic", "solenoid", "biot", "lorentz", "galvanometer", "cyclotron"], sub: "Physics", ch: "Moving Charges & Magnetism", topic: "Magnetic Field & Forces" },
-      { kw: ["lens", "mirror", "prism", "refraction", "reflection", "focal length", "optical"], sub: "Physics", ch: "Ray Optics", top: "Lenses, Mirrors & Prisms" },
-      { kw: ["velocity", "acceleration", "force", "friction", "momentum", "work", "energy"], sub: "Physics", ch: "Mechanics", top: "Laws of Motion & Work-Energy" },
-
-      // Chemistry
-      { kw: ["iupac", "alkane", "alkene", "isomerism", "carbocation", "benzene", "nucleophile", "electrophile", "organic"], sub: "Chemistry", ch: "Organic Chemistry", top: "Structure & Reaction Mechanism" },
-      { kw: ["mole", "molarity", "molality", "avogadro", "stochiometry"], sub: "Chemistry", ch: "Basic Concepts of Chemistry", top: "Mole Concept & Solutions" },
-      { kw: ["bond angle", "hybridization", "vsepr", "dipole moment", "orbital", "covalent"], sub: "Chemistry", ch: "Chemical Bonding", top: "Molecular Structure & Bonding" },
-      { kw: ["coordination", "ligand", "oxidation state", "d-block", "p-block"], sub: "Chemistry", ch: "Inorganic Chemistry", top: "Coordination Compounds & Periodic Trends" },
-
-      // Biology
-      { kw: ["dna", "rna", "gene", "chromosome", "allele", "mendel", "replication", "transcription", "translation"], sub: "Biology", ch: "Genetics & Molecular Biology", top: "DNA & Inheritance" },
-      { kw: ["cell", "mitosis", "meiosis", "organelle", "membrane", "ribosome", "mitochondria"], sub: "Biology", ch: "Cell Biology", top: "Cell Structure & Division" },
-      { kw: ["photosynthesis", "respiration", "xylem", "phloem", "stomata", "chloroplast"], sub: "Biology", ch: "Plant Physiology", top: "Plant Transport & Energetics" },
-      { kw: ["heart", "kidney", "neuron", "hormone", "enzyme", "digestion", "blood", "brain"], sub: "Biology", ch: "Human Physiology", top: "Organ Systems & Function" }
-    ];
-
-    function updateTimeBreakdown() {
-      let totalMins = parseInt(document.getElementById('timeDurationInput').value) || 0;
-      let phy = Math.round(totalMins * 0.40);
-      let chem = Math.round(totalMins * 0.35);
-      let bio = Math.max(0, totalMins - phy - chem);
-
-      document.getElementById('phyTime').innerText = phy + " Mins";
-      document.getElementById('chemTime').innerText = chem + " Mins";
-      document.getElementById('bioTime').innerText = bio + " Mins";
+    function getSyllabusDetails(qNo) {
+      if (qNo <= 45) {
+        if (qNo <= 10) return { subject: "Physics", chapter: "Kinematics & Mechanics", topic: "Motion in 1D/2D, Laws of Motion" };
+        if (qNo <= 20) return { subject: "Physics", chapter: "Work, Energy & Rotation", topic: "Work-Energy Theorem, Rigid Body Dynamics" };
+        if (qNo <= 30) return { subject: "Physics", chapter: "Electrodynamics", topic: "Electrostatics, Current Electricity, Magnetism" };
+        if (qNo <= 40) return { subject: "Physics", chapter: "Optics & Waves", topic: "Ray Optics, Wave Optics, Oscillations" };
+        return { subject: "Physics", chapter: "Modern Physics & Thermodynamics", topic: "Dual Nature, Atoms, Nuclei, Thermodynamics" };
+      } else if (qNo <= 90) {
+        if (qNo <= 55) return { subject: "Chemistry", chapter: "Physical Chemistry", topic: "Mole Concept, Equilibrium, Electrochemistry" };
+        if (qNo <= 70) return { subject: "Chemistry", chapter: "Inorganic Chemistry", topic: "Periodic Table, Chemical Bonding, p/d/f Block" };
+        if (qNo <= 85) return { subject: "Chemistry", chapter: "Organic Chemistry", topic: "GOC, Hydrocarbons, Biomolecules, Polymers" };
+        return { subject: "Chemistry", chapter: "Coordination & Reaction Kinetics", topic: "Coordination Compounds, Chemical Kinetics" };
+      } else {
+        if (qNo <= 110) return { subject: "Biology (Botany)", chapter: "Cell & Genetics", topic: "Cell Biology, Molecular Basis of Inheritance" };
+        if (qNo <= 130) return { subject: "Biology (Botany)", chapter: "Plant Physiology & Diversity", topic: "Photosynthesis, Respiration, Plant Kingdom" };
+        if (qNo <= 155) return { subject: "Biology (Zoology)", chapter: "Human Physiology", topic: "Digestion, Circulation, Neural Control" };
+        if (qNo <= 170) return { subject: "Biology (Zoology)", chapter: "Reproduction & Evolution", topic: "Human Reproduction, Biotechnology, Evolution" };
+        return { subject: "Biology", chapter: "Ecology & Human Welfare", topic: "Ecosystem, Biodiversity, Environmental Issues" };
+      }
     }
 
-    document.getElementById('timeDurationInput').addEventListener('input', updateTimeBreakdown);
-    document.getElementById('totalQInput').addEventListener('input', function(e) {
-      let val = parseInt(e.target.value) || 1;
-      document.getElementById('timeDurationInput').value = val;
-      updateTimeBreakdown();
-    });
-
-    function applyQuestionCount(count, sourceText) {
-      document.getElementById('totalQInput').value = count;
-      document.getElementById('timeDurationInput').value = count;
-      document.getElementById('detectionStatus').innerText = sourceText || `✅ Set to ${count} Questions & ${count} Mins!`;
-      updateTimeBreakdown();
-    }
-
-    // PDF Text & Question Auto Scanner
-    document.getElementById('pdfInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      document.getElementById('detectionStatus').innerText = "⏳ Scanning PDF text...";
-
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const typedarray = new Uint8Array(evt.target.result);
-        pdfjsLib.getDocument({ data: typedarray }).promise.then(pdf => {
-          let textPromises = [];
-          for (let i = 1; i <= pdf.numPages; i++) {
-            textPromises.push(pdf.getPage(i).then(page => {
-              return page.getTextContent().then(tc => tc.items.map(x => x.str).join(" "));
-            }));
-          }
-          Promise.all(textPromises).then(fullTextArray => {
-            extractedPdfText = fullTextArray.join(" ");
-
-            let matches = extractedPdfText.match(/(?:Q(?:uestion)?[\.\s:-]*|^\s*|\n\s*)(\d{1,3})(?=[\.\-\)\s:]|$)/gi);
-            let detectedMax = 0;
-            if (matches) {
-              let numbers = matches.map(m => parseInt(m.replace(/\D/g, ''))).filter(n => n > 0 && n <= 200);
-              if (numbers.length > 0) detectedMax = Math.max(...numbers);
-            }
-
-            if (detectedMax > 0) {
-              applyQuestionCount(detectedMax, `✅ Scanned ${detectedMax} Questions in PDF!`);
-            } else {
-              document.getElementById('detectionStatus').innerText = "💡 Scanned PDF detected! Enter question count above (e.g. 63).";
-            }
-          });
-        }).catch(err => {
-          document.getElementById('detectionStatus').innerText = "💡 Enter question count in box above (e.g. 63).";
-        });
-      };
-      reader.readAsArrayBuffer(file);
-    });
-
-    // Answer Key
+    // Answer Key File Listener
     document.getElementById('keyFileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
 
       if (file.name.endsWith('.txt')) {
         const reader = new FileReader();
-        reader.onload = (evt) => processKeyText(evt.target.result);
+        reader.onload = function(evt) {
+          document.getElementById('answerKeyInput').value = evt.target.result;
+        };
         reader.readAsText(file);
       } else if (file.name.endsWith('.pdf')) {
         const reader = new FileReader();
         reader.onload = function(evt) {
           const typedarray = new Uint8Array(evt.target.result);
-          pdfjsLib.getDocument({ data: typedarray }).promise.then(pdf => {
-            let promises = [];
+          pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+            let countPromises = [];
             for (let i = 1; i <= pdf.numPages; i++) {
-              promises.push(pdf.getPage(i).then(p => p.getTextContent().then(tc => tc.items.map(x => x.str).join(" "))));
+              countPromises.push(pdf.getPage(i).then(page => {
+                return page.getTextContent().then(textContent => {
+                  return textContent.items.map(item => item.str).join(" ");
+                });
+              }));
             }
-            Promise.all(promises).then(texts => processKeyText(texts.join(" ")));
+            Promise.all(countPromises).then(pagesText => {
+              document.getElementById('answerKeyInput').value = pagesText.join(" ");
+            });
           });
         };
         reader.readAsArrayBuffer(file);
       }
     });
-
-    document.getElementById('answerKeyInput').addEventListener('input', (e) => processKeyText(e.target.value));
-
-    function processKeyText(rawText) {
-      document.getElementById('answerKeyInput').value = rawText;
-      const matches = rawText.match(/[A-Da-d]/g);
-      if (matches && matches.length > 0) {
-        applyQuestionCount(matches.length, `🔑 Answer Key Loaded: ${matches.length} Questions`);
-      }
-    }
 
     document.getElementById('startBtn').onclick = () => {
       const fileInput = document.getElementById('pdfInput');
@@ -295,19 +275,19 @@
         return;
       }
 
-      totalQuestions = parseInt(document.getElementById('totalQInput').value) || 180;
-      let durationMins = parseInt(document.getElementById('timeDurationInput').value) || totalQuestions;
-      timeRemaining = durationMins * 60;
-
       const matches = keyRaw.match(/[A-Da-d]/g);
-      correctAnswers = matches ? matches.map(x => x.toUpperCase()).slice(0, totalQuestions) : [];
+      if (matches && matches.length > 0) {
+        correctAnswers = matches.map(x => x.toUpperCase());
+      } else {
+        correctAnswers = [];
+      }
 
       const file = fileInput.files[0];
       const reader = new FileReader();
 
       reader.onload = function (e) {
         const typedarray = new Uint8Array(e.target.result);
-        pdfjsLib.getDocument({ data: typedarray }).promise.then(pdf => {
+        pdfjsLib.getDocument(typedarray).promise.then(pdf => {
           pdfDoc = pdf;
           document.getElementById('setupSection').classList.add('hidden');
           document.getElementById('testArea').classList.remove('hidden');
@@ -317,7 +297,9 @@
           renderAllPages();
           updateActiveQ();
           startTimer();
-        }).catch(err => alert("PDF render error: " + err.message));
+        }).catch(err => {
+          alert("PDF render nahi ho saki: " + err.message);
+        });
       };
       reader.readAsArrayBuffer(file);
     };
@@ -358,17 +340,21 @@
     }
 
     function buildOmrGrid() {
-      document.getElementById('paletteTitle').innerText = `Question Palette (1-${totalQuestions})`;
       const container = document.getElementById('gridNumbers');
       container.innerHTML = '';
 
       for (let i = 1; i <= totalQuestions; i++) {
         const btn = document.createElement('button');
         btn.innerText = i;
+        
         let btnStyle = "p-2 rounded-lg font-bold text-center border text-xs ";
-        if (i === currentQ) btnStyle += "bg-blue-600 text-white border-blue-700 ring-2 ring-blue-300";
-        else if (userAnswers[i]) btnStyle += "bg-green-500 text-white border-green-600";
-        else btnStyle += "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200";
+        if (i === currentQ) {
+          btnStyle += "bg-blue-600 text-white border-blue-700 ring-2 ring-blue-300";
+        } else if (userAnswers[i]) {
+          btnStyle += "bg-green-500 text-white border-green-600";
+        } else {
+          btnStyle += "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200";
+        }
 
         btn.className = btnStyle;
         btn.onclick = () => jumpToQ(i);
@@ -377,17 +363,17 @@
     }
 
     function jumpToQ(qNum) {
-      if (qNum > totalQuestions) qNum = totalQuestions;
       currentQ = qNum;
       updateActiveQ();
       document.getElementById('omrGridModal').classList.add('hidden');
       hideResultModal();
 
       if (pdfDoc && pdfDoc.numPages) {
-        let pageRatio = (qNum - 1) / totalQuestions;
-        let targetPageNum = Math.min(Math.floor(pageRatio * pdfDoc.numPages) + 1, pdfDoc.numPages);
-        let targetCanvas = document.getElementById("pdf-page-" + targetPageNum);
-        if (targetCanvas) targetCanvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        let estimatedPage = Math.min(Math.ceil((qNum / totalQuestions) * pdfDoc.numPages), pdfDoc.numPages);
+        let targetCanvas = document.getElementById("pdf-page-" + estimatedPage);
+        if (targetCanvas) {
+          targetCanvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
     }
 
@@ -409,9 +395,11 @@
 
       const buttons = document.querySelectorAll('.opt-btn');
       buttons.forEach(btn => {
-        btn.className = (userAnswers[currentQ] === btn.innerText)
-          ? "opt-btn bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow"
-          : "opt-btn bg-gray-100 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300";
+        if (userAnswers[currentQ] === btn.innerText) {
+          btn.className = "opt-btn bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow";
+        } else {
+          btn.className = "opt-btn bg-gray-100 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300";
+        }
       });
     }
 
@@ -430,6 +418,18 @@
       }, 1000);
     }
 
+    function toggleSubjectBox(boxId, arrowId) {
+      const box = document.getElementById(boxId);
+      const arrow = document.getElementById(arrowId);
+      if (box.classList.contains('hidden')) {
+        box.classList.remove('hidden');
+        arrow.innerText = '▲';
+      } else {
+        box.classList.add('hidden');
+        arrow.innerText = '▼';
+      }
+    }
+
     function hideResultModal() {
       document.getElementById('resultSection').classList.add('hidden');
       document.getElementById('showResultBtn').classList.remove('hidden');
@@ -437,31 +437,6 @@
 
     function reopenResultModal() {
       document.getElementById('resultSection').classList.remove('hidden');
-    }
-
-    // Dynamic Intelligent Scanner across Entire Paper Text
-    function autoDetectSubjectAndChapter(qNum) {
-      if (extractedPdfText) {
-        let textLower = extractedPdfText.toLowerCase();
-        for (let item of masterTaxonomy) {
-          for (let kw of item.kw) {
-            if (textLower.includes(kw)) {
-              return { sub: item.sub, ch: item.ch, top: item.top };
-            }
-          }
-        }
-      }
-
-      // Default Fallback only if PDF text has no matches
-      if (totalQuestions <= 50) {
-        return { sub: "Physics", ch: "Physics Paper", top: "Chapter Numerical & Concepts" };
-      }
-      let phyCut = Math.round(totalQuestions * 0.25);
-      let chemCut = Math.round(totalQuestions * 0.50);
-
-      if (qNum <= phyCut) return { sub: "Physics", ch: "Physics Section", top: "Core Physics Concepts" };
-      if (qNum <= chemCut) return { sub: "Chemistry", ch: "Chemistry Section", top: "Core Chemistry Concepts" };
-      return { sub: "Biology", ch: "Biology Section", top: "Botany & Zoology Concepts" };
     }
 
     function submitTest() {
@@ -476,50 +451,68 @@
       let score = 0, right = 0, wrong = 0, unattempted = 0;
       let reviewHtml = "";
 
+      let phyHtml = "", chemHtml = "", bioHtml = "";
+
+      let phyStats = { score: 0, r: 0, w: 0, l: 0 };
+      let chemStats = { score: 0, r: 0, w: 0, l: 0 };
+      let bioStats = { score: 0, r: 0, w: 0, l: 0 };
+
       for (let i = 1; i <= totalQuestions; i++) {
         let user = userAnswers[i];
         let correct = hasKey ? correctAnswers[i - 1] : null;
-        let info = autoDetectSubjectAndChapter(i);
+        let info = getSyllabusDetails(i);
 
-        let topicTag = `<div class='text-[10px] text-gray-500 mt-0.5'><b>📌 ${info.sub}:</b> ${info.ch} • <i>${info.top}</i></div>`;
+        let statusBadge = "";
+        let cardBgClass = "bg-gray-50 border-gray-200";
+        let targetStats = (i <= 45) ? phyStats : (i <= 90) ? chemStats : bioStats;
 
         if (hasKey) {
           if (user) {
             if (correct && user === correct) {
-              score += 4; right++;
-              reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2.5 rounded-xl bg-green-50 border border-green-200 text-green-900 cursor-pointer hover:bg-green-100 flex flex-col justify-between'>
-                <div class='flex justify-between items-center'><span><b>Q${i}:</b> Right ✅ (Your: ${user} | Sahi: ${correct})</span><span class='text-[10px] bg-green-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>
-                ${topicTag}
-              </div>`;
+              score += 4; right++; targetStats.score += 4; targetStats.r++;
+              statusBadge = "<span class='bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded-md font-bold'>RIGHT (+4)</span>";
+              cardBgClass = "bg-green-50/50 border-green-200";
+              reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-green-50 border border-green-200 text-green-800 cursor-pointer hover:bg-green-100 flex justify-between items-center'><span><b>Q${i}:</b> Right (Your: ${user} | Sahi: ${correct})</span><span class='text-[10px] bg-green-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
             } else {
-              score -= 1; wrong++;
-              reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-900 cursor-pointer hover:bg-red-100 flex flex-col justify-between'>
-                <div class='flex justify-between items-center'><span><b>Q${i}:</b> Wrong ❌ (Your: ${user} | Sahi: ${correct || 'N/A'})</span><span class='text-[10px] bg-red-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>
-                ${topicTag}
-              </div>`;
+              score -= 1; wrong++; targetStats.score -= 1; targetStats.w++;
+              statusBadge = "<span class='bg-red-100 text-red-800 text-[10px] px-2 py-0.5 rounded-md font-bold'>WRONG (-1)</span>";
+              cardBgClass = "bg-red-50/50 border-red-200";
+              reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-red-50 border border-red-200 text-red-800 cursor-pointer hover:bg-red-100 flex justify-between items-center'><span><b>Q${i}:</b> Wrong ❌ (Your: ${user} | Sahi: ${correct || 'N/A'})</span><span class='text-[10px] bg-red-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
             }
           } else {
-            unattempted++;
-            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2.5 rounded-xl bg-gray-100 text-gray-700 cursor-pointer hover:bg-gray-200 flex flex-col justify-between'>
-              <div class='flex justify-between items-center'><span><b>Q${i}:</b> Skipped ⚪ (Sahi: ${correct || 'N/A'})</span><span class='text-[10px] bg-gray-300 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>
-              ${topicTag}
-            </div>`;
+            unattempted++; targetStats.l++;
+            statusBadge = "<span class='bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold'>SKIPPED</span>";
+            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200 flex justify-between items-center'><span><b>Q${i}:</b> Skipped (Sahi: ${correct || 'N/A'})</span><span class='text-[10px] bg-gray-300 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
           }
         } else {
           if (user) {
-            right++;
-            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 cursor-pointer hover:bg-blue-100 flex flex-col justify-between'>
-              <div class='flex justify-between items-center'><span><b>Q${i}:</b> Selected (${user})</span><span class='text-[10px] bg-blue-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>
-              ${topicTag}
-            </div>`;
+            right++; targetStats.r++;
+            statusBadge = `<span class='bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-md font-bold'>OPTION ${user}</span>`;
+            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 cursor-pointer hover:bg-blue-100 flex justify-between items-center'><span><b>Q${i}:</b> Selected (${user})</span><span class='text-[10px] bg-blue-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
           } else {
-            unattempted++;
-            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2.5 rounded-xl bg-gray-100 text-gray-700 cursor-pointer hover:bg-gray-200 flex flex-col justify-between'>
-              <div class='flex justify-between items-center'><span><b>Q${i}:</b> Skipped</span><span class='text-[10px] bg-gray-300 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>
-              ${topicTag}
-            </div>`;
+            unattempted++; targetStats.l++;
+            statusBadge = "<span class='bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold'>SKIPPED</span>";
+            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200 flex justify-between items-center'><span><b>Q${i}:</b> Skipped</span><span class='text-[10px] bg-gray-300 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
           }
         }
+
+        let itemCard = `
+          <div onclick="jumpToQ(${i})" class="p-2.5 border rounded-xl ${cardBgClass} shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-400 transition">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-gray-900 text-xs">Question ${i}</span>
+              ${statusBadge}
+            </div>
+            <div class="text-[11px] text-gray-600">
+              <b>Chapter:</b> ${info.chapter} <br/>
+              <b>Topic:</b> ${info.topic}
+            </div>
+            <div class="text-[10px] text-blue-600 font-bold mt-1 text-right">Tap to open question in paper ➔</div>
+          </div>
+        `;
+
+        if (i <= 45) phyHtml += itemCard;
+        else if (i <= 90) chemHtml += itemCard;
+        else bioHtml += itemCard;
       }
 
       if (hasKey) {
@@ -527,15 +520,37 @@
         document.getElementById('correctCount').innerText = `Right: ${right}`;
         document.getElementById('wrongCount').innerText = `Wrong: ${wrong}`;
         document.getElementById('unattCount').innerText = `Left: ${unattempted}`;
+
+        document.getElementById('phyScore').innerText = `${phyStats.score}/180`;
+        document.getElementById('chemScore').innerText = `${chemStats.score}/180`;
+        document.getElementById('bioScore').innerText = `${bioStats.score}/360`;
       } else {
         document.getElementById('scoreDisplay').innerText = `Attempted: ${right} / ${totalQuestions}`;
         document.getElementById('summaryBox').innerHTML = `<div class='text-blue-600 text-xs font-bold'>⚠️ Answer key missing. Displaying Attempt Summary.</div>`;
+
+        document.getElementById('phyScore').innerText = `${phyStats.r} Attempted`;
+        document.getElementById('chemScore').innerText = `${chemStats.r} Attempted`;
+        document.getElementById('bioScore').innerText = `${bioStats.r} Attempted`;
       }
+
+      document.getElementById('phyR').innerText = phyStats.r;
+      document.getElementById('phyW').innerText = phyStats.w;
+      document.getElementById('phyL').innerText = phyStats.l;
+
+      document.getElementById('chemR').innerText = chemStats.r;
+      document.getElementById('chemW').innerText = chemStats.w;
+      document.getElementById('chemL').innerText = chemStats.l;
+
+      document.getElementById('bioR').innerText = bioStats.r;
+      document.getElementById('bioW').innerText = bioStats.w;
+      document.getElementById('bioL').innerText = bioStats.l;
+
+      document.getElementById('phyAnalysisBox').innerHTML = phyHtml;
+      document.getElementById('chemAnalysisBox').innerHTML = chemHtml;
+      document.getElementById('bioAnalysisBox').innerHTML = bioHtml;
 
       document.getElementById('reviewGrid').innerHTML = reviewHtml;
     }
-
-    updateTimeBreakdown();
   </script>
 </body>
 </html>
