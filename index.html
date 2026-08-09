@@ -26,8 +26,20 @@
     
     <!-- Question Paper File Input -->
     <label class="block text-xs font-bold text-gray-600 mb-1">1. Select Question Paper (PDF):</label>
-    <input type="file" id="pdfInput" accept=".pdf" class="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700">
+    <input type="file" id="pdfInput" accept=".pdf" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700">
     
+    <!-- Dynamic Question & Time Setup -->
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <div>
+        <label class="block text-xs font-bold text-gray-600 mb-1">Total Questions:</label>
+        <input type="number" id="totalQInput" value="180" min="1" max="200" class="w-full p-2 border rounded-xl text-xs bg-white font-bold text-blue-800 focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-600 mb-1">Total Time (Minutes):</label>
+        <input type="number" id="timeDurationInput" value="180" min="1" class="w-full p-2 border rounded-xl text-xs bg-white font-bold text-blue-800 focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+    </div>
+
     <!-- Answer Key File Input -->
     <label class="block text-xs font-bold text-gray-600 mb-1">2. Upload Answer Key File (PDF / TXT - Optional):</label>
     <input type="file" id="keyFileInput" accept=".pdf,.txt" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-purple-600 file:text-white file:font-semibold hover:file:bg-purple-700">
@@ -39,23 +51,26 @@
     <textarea id="answerKeyInput" class="w-full h-20 p-3 border rounded-xl mb-4 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Example: A,B,C,D,A,C,D,B..."></textarea>
     
     <button id="startBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow-md transition">
-      🚀 Start Test (Full Screen View)
+      🚀 Start Test
     </button>
   </div>
 
   <!-- Main Test Area -->
   <div id="testArea" class="hidden flex-col items-center pb-48">
     
-    <!-- Full-Width Scrollable PDF Container -->
-    <div id="pdfViewerContainer" class="w-full max-w-3xl flex flex-col items-center space-y-3 p-2 my-2">
-      <!-- PDF Pages rendered here -->
+    <!-- PDF Viewer Outer Container for Scroll Control -->
+    <div class="w-full max-w-3xl overflow-x-auto p-2 my-2 flex justify-center">
+      <!-- Scrollable PDF Canvas Container -->
+      <div id="pdfViewerContainer" class="flex flex-col items-center space-y-3 transition-transform duration-200 origin-top">
+        <!-- PDF Pages rendered here -->
+      </div>
     </div>
 
     <!-- Full OMR Grid Modal Overlay -->
     <div id="omrGridModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div class="bg-white w-full max-w-lg rounded-2xl p-4 max-h-[80vh] flex flex-col shadow-2xl">
         <div class="flex justify-between items-center mb-3 border-b pb-2">
-          <h3 class="font-bold text-gray-800 text-sm">Question Palette (1-180)</h3>
+          <h3 id="paletteTitle" class="font-bold text-gray-800 text-sm">Question Palette (1-180)</h3>
           <button onclick="toggleOmrGrid()" class="text-gray-500 font-bold text-lg hover:text-black">&times;</button>
         </div>
         
@@ -78,6 +93,13 @@
       <div class="flex justify-between items-center mb-2 px-1">
         <span id="activeQText" class="text-sm font-bold text-blue-700">Question 1 / 180</span>
         <div class="space-x-1 flex items-center">
+          <!-- Paper Zoom Controls -->
+          <div class="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-300 mr-1">
+            <button onclick="zoomPaper(-0.15)" class="px-2 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200 rounded">🔍-</button>
+            <button onclick="resetZoom()" class="px-1.5 py-1 text-[10px] font-bold text-gray-500 hover:bg-gray-200 rounded">Reset</button>
+            <button onclick="zoomPaper(0.15)" class="px-2 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200 rounded">🔍+</button>
+          </div>
+
           <button id="showResultBtn" onclick="reopenResultModal()" class="hidden bg-purple-600 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">
             📊 View Result
           </button>
@@ -211,6 +233,19 @@
     let totalQuestions = 180;
     let timeRemaining = 10800;
     let timerInterval = null;
+    let currentZoomScale = 1.0;
+
+    function zoomPaper(delta) {
+      currentZoomScale = Math.min(Math.max(0.6, currentZoomScale + delta), 2.5);
+      const container = document.getElementById('pdfViewerContainer');
+      container.style.transform = `scale(${currentZoomScale})`;
+    }
+
+    function resetZoom() {
+      currentZoomScale = 1.0;
+      const container = document.getElementById('pdfViewerContainer');
+      container.style.transform = `scale(1.0)`;
+    }
 
     function getSyllabusDetails(qNo) {
       if (qNo <= 45) {
@@ -275,9 +310,13 @@
         return;
       }
 
+      totalQuestions = parseInt(document.getElementById('totalQInput').value) || 180;
+      let durationMins = parseInt(document.getElementById('timeDurationInput').value) || totalQuestions;
+      timeRemaining = durationMins * 60;
+
       const matches = keyRaw.match(/[A-Da-d]/g);
       if (matches && matches.length > 0) {
-        correctAnswers = matches.map(x => x.toUpperCase());
+        correctAnswers = matches.map(x => x.toUpperCase()).slice(0, totalQuestions);
       } else {
         correctAnswers = [];
       }
@@ -340,6 +379,7 @@
     }
 
     function buildOmrGrid() {
+      document.getElementById('paletteTitle').innerText = `Question Palette (1-${totalQuestions})`;
       const container = document.getElementById('gridNumbers');
       container.innerHTML = '';
 
@@ -363,6 +403,7 @@
     }
 
     function jumpToQ(qNum) {
+      if (qNum > totalQuestions) qNum = totalQuestions;
       currentQ = qNum;
       updateActiveQ();
       document.getElementById('omrGridModal').classList.add('hidden');
