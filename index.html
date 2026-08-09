@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEET Smart Mock Test Portal with Chapter Analysis</title>
+  <title>NEET Smart Mock Test Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
@@ -43,7 +43,7 @@
     <!-- Suggested Time Breakdown Info -->
     <div id="timeBreakdownBox" class="p-2.5 bg-blue-50 border border-blue-200 rounded-xl mb-3 text-[11px] text-blue-900">
       <b id="detectionStatus">⏱️ Smart Time Distribution:</b>
-      <div class="flex justify-between mt-1 text-[10px]">
+      <div id="breakdownDetails" class="flex justify-between mt-1 text-[10px]">
         <span>⚛️ Physics: <b id="phyTime">72 Mins</b> (40%)</span>
         <span>🧪 Chem: <b id="chemTime">63 Mins</b> (35%)</span>
         <span>🧬 Bio: <b id="bioTime">45 Mins</b> (25%)</span>
@@ -68,12 +68,11 @@
   <!-- Main Test Area -->
   <div id="testArea" class="hidden flex-col items-center pb-48">
     
-    <!-- Full-Width Scrollable PDF Container -->
     <div id="pdfViewerContainer" class="w-full max-w-3xl flex flex-col items-center space-y-3 p-2 my-2">
-      <!-- PDF Pages rendered here -->
+      <!-- PDF Pages -->
     </div>
 
-    <!-- Full OMR Grid Modal Overlay -->
+    <!-- Question Palette Modal -->
     <div id="omrGridModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div class="bg-white w-full max-w-lg rounded-2xl p-4 max-h-[80vh] flex flex-col shadow-2xl">
         <div class="flex justify-between items-center mb-3 border-b pb-2">
@@ -89,7 +88,7 @@
       </div>
     </div>
 
-    <!-- Floating Bottom Control Bar -->
+    <!-- Control Bar -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-2xl z-40 max-w-3xl mx-auto rounded-t-2xl">
       <div class="flex justify-between items-center mb-2 px-1">
         <span id="activeQText" class="text-sm font-bold text-blue-700">Question 1</span>
@@ -126,7 +125,6 @@
       <button onclick="hideResultModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8 font-bold text-gray-700">&times;</button>
       
       <h2 class="text-2xl font-bold mb-1 text-center text-gray-800">Test Result 🎉</h2>
-      <p class="text-center text-xs text-gray-500 mb-4">(Tap on any Question to view it in Paper)</p>
 
       <div id="scoreDisplay" class="text-3xl font-extrabold text-blue-600 text-center mb-4"></div>
       
@@ -136,8 +134,7 @@
         <div class="text-gray-600" id="unattCount">Left: 0</div>
       </div>
 
-      <!-- Question Review List with Chapter/Topic Info -->
-      <h3 class="font-bold text-sm text-gray-700 mb-2">📝 Question, Chapter & Topic Review</h3>
+      <h3 class="font-bold text-sm text-gray-700 mb-2">📝 Complete Chapter & Topic Analysis</h3>
       <div id="reviewGrid" class="max-h-60 overflow-y-auto space-y-2 text-xs p-2 border rounded-xl bg-gray-50 mb-4"></div>
       
       <div class="flex gap-2">
@@ -166,23 +163,27 @@
     let timerInterval = null;
     let extractedPdfText = "";
 
-    // Keyword Taxonomy for NEET Chapter/Topic Tagging
-    const chapterTopics = [
-      { keywords: ["charge", "coulomb", "electric field", "dipole"], subject: "Physics", chapter: "Electrostatics", topic: "Electric Charge & Field" },
-      { keywords: ["current", "resistance", "resistor", "ohm", "kirchhoff", "potentiometer"], subject: "Physics", chapter: "Current Electricity", topic: "Ohm's Law & Circuits" },
-      { keywords: ["magnetic", "solenoid", "biot", "lorentz", "galvanometer"], subject: "Physics", chapter: "Moving Charges & Magnetism", topic: "Magnetic Force & Fields" },
-      { keywords: ["capacitor", "capacitance", "dielectric"], subject: "Physics", chapter: "Electrostatic Potential & Capacitance", topic: "Capacitors" },
-      { keywords: ["lens", "mirror", "refraction", "reflection", "prism", "optical"], subject: "Physics", chapter: "Ray Optics", topic: "Refraction & Lenses" },
-      { keywords: ["wave", "interference", "diffraction", "young", "slit"], subject: "Physics", chapter: "Wave Optics", topic: "Interference & Wavefront" },
-      { keywords: ["atom", "bohr", "electron", "nucleus", "photoelectric", "work function"], subject: "Physics", chapter: "Modern Physics", topic: "Photoelectric Effect & Bohr Model" },
-      { keywords: ["mole", "concentration", "molarity", "moles", "avogadro"], subject: "Chemistry", chapter: "Some Basic Concepts", topic: "Mole Concept" },
-      { keywords: ["hybridization", "bond angle", "vsepr", "dipole moment", "orbital"], subject: "Chemistry", chapter: "Chemical Bonding", topic: "Hybridization & VSEPR Theory" },
-      { keywords: ["iupac", "isomerism", "carbocation", "electrophile", "nucleophile"], subject: "Chemistry", chapter: "Organic Chemistry Basics", topic: "IUPAC & Reaction Mechanism" },
-      { keywords: ["p-block", "d-block", "coordination", "ligand", "oxidation state"], subject: "Chemistry", chapter: "Inorganic Chemistry", topic: "Coordination & Periodic Trends" },
-      { keywords: ["cell", "mitosis", "meiosis", "organelle", "ribosome", "membrane"], subject: "Biology", chapter: "Cell: Structure & Function", topic: "Cell Division & Organelles" },
-      { keywords: ["dna", "rna", "gene", "chromosome", "allele", "mendel", "transcription"], subject: "Biology", chapter: "Genetics & Molecular Biology", topic: "DNA Replication & Mendelism" },
-      { keywords: ["photosynthesis", "respiration", "atp", "enzyme", "xylem", "phloem"], subject: "Biology", chapter: "Plant Physiology", topic: "Photosynthesis & Respiration" },
-      { keywords: ["heart", "kidney", "neuron", "hormone", "digestion", "lung"], subject: "Biology", chapter: "Human Physiology", topic: "Body Systems & Control" }
+    // Global Master Taxonomy for Auto-Detection across All Subjects
+    const masterTaxonomy = [
+      // Physics
+      { kw: ["resistance", "resistor", "ohm", "current", "circuit", "potentiometer", "drift velocity", "wheatstone", "kirchhoff", "meter bridge", "terminal voltage"], sub: "Physics", ch: "Current Electricity", top: "Circuit Analysis & Ohm's Law" },
+      { kw: ["charge", "coulomb", "electric field", "dipole", "flux", "gauss"], sub: "Physics", ch: "Electrostatics", top: "Electric Charges & Field" },
+      { kw: ["capacitor", "capacitance", "dielectric", "potential"], sub: "Physics", ch: "Electrostatic Potential & Capacitance", top: "Capacitors & Potential" },
+      { kw: ["magnetic", "solenoid", "biot", "lorentz", "galvanometer", "cyclotron"], sub: "Physics", ch: "Moving Charges & Magnetism", topic: "Magnetic Field & Forces" },
+      { kw: ["lens", "mirror", "prism", "refraction", "reflection", "focal length", "optical"], sub: "Physics", ch: "Ray Optics", top: "Lenses, Mirrors & Prisms" },
+      { kw: ["velocity", "acceleration", "force", "friction", "momentum", "work", "energy"], sub: "Physics", ch: "Mechanics", top: "Laws of Motion & Work-Energy" },
+
+      // Chemistry
+      { kw: ["iupac", "alkane", "alkene", "isomerism", "carbocation", "benzene", "nucleophile", "electrophile", "organic"], sub: "Chemistry", ch: "Organic Chemistry", top: "Structure & Reaction Mechanism" },
+      { kw: ["mole", "molarity", "molality", "avogadro", "stochiometry"], sub: "Chemistry", ch: "Basic Concepts of Chemistry", top: "Mole Concept & Solutions" },
+      { kw: ["bond angle", "hybridization", "vsepr", "dipole moment", "orbital", "covalent"], sub: "Chemistry", ch: "Chemical Bonding", top: "Molecular Structure & Bonding" },
+      { kw: ["coordination", "ligand", "oxidation state", "d-block", "p-block"], sub: "Chemistry", ch: "Inorganic Chemistry", top: "Coordination Compounds & Periodic Trends" },
+
+      // Biology
+      { kw: ["dna", "rna", "gene", "chromosome", "allele", "mendel", "replication", "transcription", "translation"], sub: "Biology", ch: "Genetics & Molecular Biology", top: "DNA & Inheritance" },
+      { kw: ["cell", "mitosis", "meiosis", "organelle", "membrane", "ribosome", "mitochondria"], sub: "Biology", ch: "Cell Biology", top: "Cell Structure & Division" },
+      { kw: ["photosynthesis", "respiration", "xylem", "phloem", "stomata", "chloroplast"], sub: "Biology", ch: "Plant Physiology", top: "Plant Transport & Energetics" },
+      { kw: ["heart", "kidney", "neuron", "hormone", "enzyme", "digestion", "blood", "brain"], sub: "Biology", ch: "Human Physiology", top: "Organ Systems & Function" }
     ];
 
     function updateTimeBreakdown() {
@@ -196,6 +197,13 @@
       document.getElementById('bioTime').innerText = bio + " Mins";
     }
 
+    document.getElementById('timeDurationInput').addEventListener('input', updateTimeBreakdown);
+    document.getElementById('totalQInput').addEventListener('input', function(e) {
+      let val = parseInt(e.target.value) || 1;
+      document.getElementById('timeDurationInput').value = val;
+      updateTimeBreakdown();
+    });
+
     function applyQuestionCount(count, sourceText) {
       document.getElementById('totalQInput').value = count;
       document.getElementById('timeDurationInput').value = count;
@@ -203,16 +211,7 @@
       updateTimeBreakdown();
     }
 
-    document.getElementById('totalQInput').addEventListener('input', function(e) {
-      let val = parseInt(e.target.value) || 1;
-      document.getElementById('timeDurationInput').value = val;
-      document.getElementById('detectionStatus').innerText = `✏️ Custom Set: ${val} Questions & ${val} Mins!`;
-      updateTimeBreakdown();
-    });
-
-    document.getElementById('timeDurationInput').addEventListener('input', updateTimeBreakdown);
-
-    // Advanced PDF Question & Text Extraction
+    // PDF Text & Question Auto Scanner
     document.getElementById('pdfInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -231,66 +230,53 @@
           }
           Promise.all(textPromises).then(fullTextArray => {
             extractedPdfText = fullTextArray.join(" ");
-            
+
             let matches = extractedPdfText.match(/(?:Q(?:uestion)?[\.\s:-]*|^\s*|\n\s*)(\d{1,3})(?=[\.\-\)\s:]|$)/gi);
-            
             let detectedMax = 0;
             if (matches) {
               let numbers = matches.map(m => parseInt(m.replace(/\D/g, ''))).filter(n => n > 0 && n <= 200);
-              if (numbers.length > 0) {
-                detectedMax = Math.max(...numbers);
-              }
+              if (numbers.length > 0) detectedMax = Math.max(...numbers);
             }
 
             if (detectedMax > 0) {
-              applyQuestionCount(detectedMax, `✅ Auto-detected ${detectedMax} Questions in PDF!`);
+              applyQuestionCount(detectedMax, `✅ Scanned ${detectedMax} Questions in PDF!`);
             } else {
-              document.getElementById('detectionStatus').innerText = "💡 Scanned PDF detected! Type total questions in box above (e.g. 63).";
+              document.getElementById('detectionStatus').innerText = "💡 Scanned PDF detected! Enter question count above (e.g. 63).";
             }
           });
         }).catch(err => {
-          document.getElementById('detectionStatus').innerText = "💡 Type total questions in box above (e.g. 63).";
+          document.getElementById('detectionStatus').innerText = "💡 Enter question count in box above (e.g. 63).";
         });
       };
       reader.readAsArrayBuffer(file);
     });
 
-    // Answer Key Handlers
+    // Answer Key
     document.getElementById('keyFileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
 
       if (file.name.endsWith('.txt')) {
         const reader = new FileReader();
-        reader.onload = function(evt) {
-          processKeyText(evt.target.result);
-        };
+        reader.onload = (evt) => processKeyText(evt.target.result);
         reader.readAsText(file);
       } else if (file.name.endsWith('.pdf')) {
         const reader = new FileReader();
         reader.onload = function(evt) {
           const typedarray = new Uint8Array(evt.target.result);
           pdfjsLib.getDocument({ data: typedarray }).promise.then(pdf => {
-            let countPromises = [];
+            let promises = [];
             for (let i = 1; i <= pdf.numPages; i++) {
-              countPromises.push(pdf.getPage(i).then(page => {
-                return page.getTextContent().then(textContent => {
-                  return textContent.items.map(item => item.str).join(" ");
-                });
-              }));
+              promises.push(pdf.getPage(i).then(p => p.getTextContent().then(tc => tc.items.map(x => x.str).join(" "))));
             }
-            Promise.all(countPromises).then(pagesText => {
-              processKeyText(pagesText.join(" "));
-            });
+            Promise.all(promises).then(texts => processKeyText(texts.join(" ")));
           });
         };
         reader.readAsArrayBuffer(file);
       }
     });
 
-    document.getElementById('answerKeyInput').addEventListener('input', function(e) {
-      processKeyText(e.target.value);
-    });
+    document.getElementById('answerKeyInput').addEventListener('input', (e) => processKeyText(e.target.value));
 
     function processKeyText(rawText) {
       document.getElementById('answerKeyInput').value = rawText;
@@ -314,11 +300,7 @@
       timeRemaining = durationMins * 60;
 
       const matches = keyRaw.match(/[A-Da-d]/g);
-      if (matches && matches.length > 0) {
-        correctAnswers = matches.map(x => x.toUpperCase()).slice(0, totalQuestions);
-      } else {
-        correctAnswers = [];
-      }
+      correctAnswers = matches ? matches.map(x => x.toUpperCase()).slice(0, totalQuestions) : [];
 
       const file = fileInput.files[0];
       const reader = new FileReader();
@@ -335,9 +317,7 @@
           renderAllPages();
           updateActiveQ();
           startTimer();
-        }).catch(err => {
-          alert("PDF render nahi ho saki: " + err.message);
-        });
+        }).catch(err => alert("PDF render error: " + err.message));
       };
       reader.readAsArrayBuffer(file);
     };
@@ -385,15 +365,10 @@
       for (let i = 1; i <= totalQuestions; i++) {
         const btn = document.createElement('button');
         btn.innerText = i;
-        
         let btnStyle = "p-2 rounded-lg font-bold text-center border text-xs ";
-        if (i === currentQ) {
-          btnStyle += "bg-blue-600 text-white border-blue-700 ring-2 ring-blue-300";
-        } else if (userAnswers[i]) {
-          btnStyle += "bg-green-500 text-white border-green-600";
-        } else {
-          btnStyle += "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200";
-        }
+        if (i === currentQ) btnStyle += "bg-blue-600 text-white border-blue-700 ring-2 ring-blue-300";
+        else if (userAnswers[i]) btnStyle += "bg-green-500 text-white border-green-600";
+        else btnStyle += "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200";
 
         btn.className = btnStyle;
         btn.onclick = () => jumpToQ(i);
@@ -412,10 +387,7 @@
         let pageRatio = (qNum - 1) / totalQuestions;
         let targetPageNum = Math.min(Math.floor(pageRatio * pdfDoc.numPages) + 1, pdfDoc.numPages);
         let targetCanvas = document.getElementById("pdf-page-" + targetPageNum);
-        
-        if (targetCanvas) {
-          targetCanvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        if (targetCanvas) targetCanvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
@@ -437,11 +409,9 @@
 
       const buttons = document.querySelectorAll('.opt-btn');
       buttons.forEach(btn => {
-        if (userAnswers[currentQ] === btn.innerText) {
-          btn.className = "opt-btn bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow";
-        } else {
-          btn.className = "opt-btn bg-gray-100 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300";
-        }
+        btn.className = (userAnswers[currentQ] === btn.innerText)
+          ? "opt-btn bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow"
+          : "opt-btn bg-gray-100 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300";
       });
     }
 
@@ -469,27 +439,29 @@
       document.getElementById('resultSection').classList.remove('hidden');
     }
 
-    // Smart Chapter Tagging Function
-    function getChapterAndTopic(qNum) {
-      if (!extractedPdfText) {
-        // Fallback mapping based on standard NEET Question Numbers
-        if (qNum <= 45) return { sub: "Physics", ch: "Physics Section", top: "Mechanics / Electrodynamics" };
-        if (qNum <= 90) return { sub: "Chemistry", ch: "Chemistry Section", top: "Organic / Inorganic / Physical" };
-        return { sub: "Biology", ch: "Biology Section", top: "Botany / Zoology" };
-      }
-
-      let textLower = extractedPdfText.toLowerCase();
-      for (let item of chapterTopics) {
-        for (let kw of item.keywords) {
-          if (textLower.includes(kw)) {
-            return { sub: item.subject, ch: item.chapter, top: item.topic };
+    // Dynamic Intelligent Scanner across Entire Paper Text
+    function autoDetectSubjectAndChapter(qNum) {
+      if (extractedPdfText) {
+        let textLower = extractedPdfText.toLowerCase();
+        for (let item of masterTaxonomy) {
+          for (let kw of item.kw) {
+            if (textLower.includes(kw)) {
+              return { sub: item.sub, ch: item.ch, top: item.top };
+            }
           }
         }
       }
 
-      if (qNum <= 45) return { sub: "Physics", ch: "Physics Chapter", top: "General Numerical/Theory" };
-      if (qNum <= 90) return { sub: "Chemistry", ch: "Chemistry Chapter", top: "General Chemistry" };
-      return { sub: "Biology", ch: "Biology Chapter", top: "NCERT Biology Concept" };
+      // Default Fallback only if PDF text has no matches
+      if (totalQuestions <= 50) {
+        return { sub: "Physics", ch: "Physics Paper", top: "Chapter Numerical & Concepts" };
+      }
+      let phyCut = Math.round(totalQuestions * 0.25);
+      let chemCut = Math.round(totalQuestions * 0.50);
+
+      if (qNum <= phyCut) return { sub: "Physics", ch: "Physics Section", top: "Core Physics Concepts" };
+      if (qNum <= chemCut) return { sub: "Chemistry", ch: "Chemistry Section", top: "Core Chemistry Concepts" };
+      return { sub: "Biology", ch: "Biology Section", top: "Botany & Zoology Concepts" };
     }
 
     function submitTest() {
@@ -507,7 +479,7 @@
       for (let i = 1; i <= totalQuestions; i++) {
         let user = userAnswers[i];
         let correct = hasKey ? correctAnswers[i - 1] : null;
-        let info = getChapterAndTopic(i);
+        let info = autoDetectSubjectAndChapter(i);
 
         let topicTag = `<div class='text-[10px] text-gray-500 mt-0.5'><b>📌 ${info.sub}:</b> ${info.ch} • <i>${info.top}</i></div>`;
 
