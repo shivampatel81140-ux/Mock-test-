@@ -29,7 +29,7 @@
     <input type="file" id="pdfInput" accept=".pdf" class="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700">
     
     <!-- Answer Key File Input -->
-    <label class="block text-xs font-bold text-gray-600 mb-1">2. Upload Answer Key File (PDF / TXT):</label>
+    <label class="block text-xs font-bold text-gray-600 mb-1">2. Upload Answer Key File (PDF / TXT - Optional):</label>
     <input type="file" id="keyFileInput" accept=".pdf,.txt" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-purple-600 file:text-white file:font-semibold hover:file:bg-purple-700">
     
     <div class="text-center my-2 text-xs font-bold text-gray-400">--- YA PHIR PASTE KAREIN ---</div>
@@ -51,7 +51,7 @@
       <!-- PDF Pages rendered here -->
     </div>
 
-    <!-- Full OMR Grid Modal Overlay (Hidden by Default) -->
+    <!-- Full OMR Grid Modal Overlay -->
     <div id="omrGridModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div class="bg-white w-full max-w-lg rounded-2xl p-4 max-h-[80vh] flex flex-col shadow-2xl">
         <div class="flex justify-between items-center mb-3 border-b pb-2">
@@ -59,17 +59,13 @@
           <button onclick="toggleOmrGrid()" class="text-gray-500 font-bold text-lg hover:text-black">&times;</button>
         </div>
         
-        <!-- Shortcut Jump Buttons for Subjects -->
         <div class="flex justify-around mb-3 text-xs">
           <button onclick="jumpToQ(1)" class="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-lg font-bold">Physics (Q1)</button>
           <button onclick="jumpToQ(46)" class="bg-purple-100 text-purple-800 px-2.5 py-1 rounded-lg font-bold">Chemistry (Q46)</button>
           <button onclick="jumpToQ(91)" class="bg-green-100 text-green-800 px-2.5 py-1 rounded-lg font-bold">Biology (Q91)</button>
         </div>
 
-        <!-- 1 to 180 Number Grid -->
-        <div id="gridNumbers" class="grid grid-cols-6 sm:grid-cols-10 gap-2 overflow-y-auto p-1 text-xs">
-          <!-- Dynamically populated buttons -->
-        </div>
+        <div id="gridNumbers" class="grid grid-cols-6 sm:grid-cols-10 gap-2 overflow-y-auto p-1 text-xs"></div>
 
         <button onclick="toggleOmrGrid()" class="mt-3 w-full bg-gray-200 text-gray-800 py-2 rounded-xl font-bold text-xs">
           Close Palette
@@ -77,7 +73,7 @@
       </div>
     </div>
 
-    <!-- Floating Bottom OMR & Control Bar -->
+    <!-- Floating Bottom Control Bar -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-2xl z-40 max-w-3xl mx-auto rounded-t-2xl">
       <div class="flex justify-between items-center mb-2 px-1">
         <span id="activeQText" class="text-sm font-bold text-blue-700">Question 1 / 180</span>
@@ -90,7 +86,6 @@
         </div>
       </div>
 
-      <!-- Options Buttons -->
       <div class="grid grid-cols-4 gap-2 mb-2">
         <button onclick="selectAns('A')" class="opt-btn bg-gray-100 hover:bg-blue-50 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300">A</button>
         <button onclick="selectAns('B')" class="opt-btn bg-gray-100 hover:bg-blue-50 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300">B</button>
@@ -116,9 +111,9 @@
       <div class="text-gray-600" id="unattCount">Left: 0</div>
     </div>
 
-    <!-- Subject Wise Breakdown Cards -->
-    <h3 class="font-bold text-sm text-gray-700 mb-2">📊 Subject-Wise Performance</h3>
-    <div class="grid grid-cols-3 gap-2 mb-4 text-xs">
+    <!-- Subject Wise Cards -->
+    <h3 class="font-bold text-sm text-gray-700 mb-2">📊 Subject-Wise Overview</h3>
+    <div class="grid grid-cols-3 gap-2 mb-5 text-xs">
       <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200">
         <div class="font-bold text-blue-800 mb-1 text-center">Physics</div>
         <div id="phyScore" class="font-bold text-blue-600 text-center text-sm">0/180</div>
@@ -148,19 +143,41 @@
       </div>
     </div>
 
-    <!-- Chapter & Topic Analysis Accordion -->
-    <div class="mb-4">
-      <button onclick="toggleAnalysis()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2.5 rounded-xl font-bold text-xs flex justify-between items-center px-4 shadow">
-        <span>🔍 Chapter & Topic-wise Detailed Analysis</span>
-        <span id="analysisArrow">▼</span>
-      </button>
-      <div id="analysisBox" class="hidden mt-2 p-3 bg-gray-50 border rounded-xl max-h-64 overflow-y-auto text-xs space-y-2">
-        <!-- Topic breakdown rendered here -->
+    <!-- SEPARATE SUBJECT-WISE ANALYSIS ACCORDIONS -->
+    <h3 class="font-bold text-sm text-gray-700 mb-2">🔍 Subject-Wise Detailed Analysis</h3>
+    <div class="space-y-2 mb-6">
+      
+      <!-- Physics Analysis -->
+      <div class="border border-blue-200 rounded-xl overflow-hidden">
+        <button onclick="toggleSubjectBox('phyAnalysisBox', 'phyArrow')" class="w-full bg-blue-50 text-blue-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+          <span>⚛️ Physics Analysis (Q1 - Q45)</span>
+          <span id="phyArrow">▼</span>
+        </button>
+        <div id="phyAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
       </div>
+
+      <!-- Chemistry Analysis -->
+      <div class="border border-purple-200 rounded-xl overflow-hidden">
+        <button onclick="toggleSubjectBox('chemAnalysisBox', 'chemArrow')" class="w-full bg-purple-50 text-purple-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+          <span>🧪 Chemistry Analysis (Q46 - Q90)</span>
+          <span id="chemArrow">▼</span>
+        </button>
+        <div id="chemAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+      </div>
+
+      <!-- Biology Analysis -->
+      <div class="border border-green-200 rounded-xl overflow-hidden">
+        <button onclick="toggleSubjectBox('bioAnalysisBox', 'bioArrow')" class="w-full bg-green-50 text-green-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+          <span>🧬 Biology Analysis (Q91 - Q180)</span>
+          <span id="bioArrow">▼</span>
+        </button>
+        <div id="bioAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+      </div>
+
     </div>
 
     <!-- Question Review List -->
-    <h3 class="font-bold text-sm text-gray-700 mb-2">📝 Question Review</h3>
+    <h3 class="font-bold text-sm text-gray-700 mb-2">📝 Complete Question Review</h3>
     <div id="reviewGrid" class="max-h-48 overflow-y-auto space-y-1.5 text-xs p-2 border rounded-xl bg-gray-50 mb-4"></div>
     
     <button onclick="location.reload()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow">
@@ -179,23 +196,19 @@
     let timeRemaining = 10800;
     let timerInterval = null;
 
-    // Standard NEET Syllabus Mapping Template for Chapter & Topic Analysis
     function getSyllabusDetails(qNo) {
       if (qNo <= 45) {
-        // Physics
         if (qNo <= 10) return { subject: "Physics", chapter: "Kinematics & Mechanics", topic: "Motion in 1D/2D, Laws of Motion" };
         if (qNo <= 20) return { subject: "Physics", chapter: "Work, Energy & Rotation", topic: "Work-Energy Theorem, Rigid Body Dynamics" };
         if (qNo <= 30) return { subject: "Physics", chapter: "Electrodynamics", topic: "Electrostatics, Current Electricity, Magnetism" };
         if (qNo <= 40) return { subject: "Physics", chapter: "Optics & Waves", topic: "Ray Optics, Wave Optics, Oscillations" };
         return { subject: "Physics", chapter: "Modern Physics & Thermodynamics", topic: "Dual Nature, Atoms, Nuclei, Thermodynamics" };
       } else if (qNo <= 90) {
-        // Chemistry
         if (qNo <= 55) return { subject: "Chemistry", chapter: "Physical Chemistry", topic: "Mole Concept, Equilibrium, Electrochemistry" };
         if (qNo <= 70) return { subject: "Chemistry", chapter: "Inorganic Chemistry", topic: "Periodic Table, Chemical Bonding, p/d/f Block" };
         if (qNo <= 85) return { subject: "Chemistry", chapter: "Organic Chemistry", topic: "GOC, Hydrocarbons, Biomolecules, Polymers" };
         return { subject: "Chemistry", chapter: "Coordination & Reaction Kinetics", topic: "Coordination Compounds, Chemical Kinetics" };
       } else {
-        // Biology
         if (qNo <= 110) return { subject: "Biology (Botany)", chapter: "Cell & Genetics", topic: "Cell Biology, Molecular Basis of Inheritance" };
         if (qNo <= 130) return { subject: "Biology (Botany)", chapter: "Plant Physiology & Diversity", topic: "Photosynthesis, Respiration, Plant Kingdom" };
         if (qNo <= 155) return { subject: "Biology (Zoology)", chapter: "Human Physiology", topic: "Digestion, Circulation, Neural Control" };
@@ -379,9 +392,9 @@
       }, 1000);
     }
 
-    function toggleAnalysis() {
-      const box = document.getElementById('analysisBox');
-      const arrow = document.getElementById('analysisArrow');
+    function toggleSubjectBox(boxId, arrowId) {
+      const box = document.getElementById(boxId);
+      const arrow = document.getElementById(arrowId);
       if (box.classList.contains('hidden')) {
         box.classList.remove('hidden');
         arrow.innerText = '▲';
@@ -400,9 +413,11 @@
       document.getElementById('topHeader').classList.add('hidden');
       document.getElementById('resultSection').classList.remove('hidden');
 
+      let hasKey = correctAnswers.length > 0;
       let score = 0, right = 0, wrong = 0, unattempted = 0;
       let reviewHtml = "";
-      let analysisHtml = "";
+
+      let phyHtml = "", chemHtml = "", bioHtml = "";
 
       let phyStats = { score: 0, r: 0, w: 0, l: 0 };
       let chemStats = { score: 0, r: 0, w: 0, l: 0 };
@@ -410,42 +425,44 @@
 
       for (let i = 1; i <= totalQuestions; i++) {
         let user = userAnswers[i];
-        let correct = correctAnswers[i - 1];
+        let correct = hasKey ? correctAnswers[i - 1] : null;
         let info = getSyllabusDetails(i);
 
         let statusText = "";
-        let isCorrect = false;
+        let targetStats = (i <= 45) ? phyStats : (i <= 90) ? chemStats : bioStats;
 
-        if (user) {
-          if (correct && user === correct) {
-            score += 4; right++; isCorrect = true;
-            statusText = "<span class='text-green-600 font-bold'>Correct (+4)</span>";
-            reviewHtml += `<div class='p-1.5 rounded bg-green-50 border border-green-200 text-green-700'><b>Q${i}: Correct</b> (Your: ${user} | Sahi: ${correct}) [+4]</div>`;
+        if (hasKey) {
+          if (user) {
+            if (correct && user === correct) {
+              score += 4; right++; targetStats.score += 4; targetStats.r++;
+              statusText = "<span class='text-green-600 font-bold'>Correct (+4)</span>";
+              reviewHtml += `<div class='p-1.5 rounded bg-green-50 border border-green-200 text-green-700'><b>Q${i}: Correct</b> (Your: ${user} | Sahi: ${correct}) [+4]</div>`;
+            } else {
+              score -= 1; wrong++; targetStats.score -= 1; targetStats.w++;
+              statusText = "<span class='text-red-600 font-bold'>Incorrect (-1)</span>";
+              reviewHtml += `<div class='p-1.5 rounded bg-red-50 border border-red-200 text-red-700'><b>Q${i}: Wrong</b> (Your: ${user} | Sahi: ${correct || 'N/A'}) [-1]</div>`;
+            }
           } else {
-            score -= 1; wrong++;
-            statusText = "<span class='text-red-600 font-bold'>Incorrect (-1)</span>";
-            reviewHtml += `<div class='p-1.5 rounded bg-red-50 border border-red-200 text-red-700'><b>Q${i}: Wrong</b> (Your: ${user} | Sahi: ${correct || 'N/A'}) [-1]</div>`;
+            unattempted++; targetStats.l++;
+            statusText = "<span class='text-gray-500 font-bold'>Unattempted (0)</span>";
+            reviewHtml += `<div class='p-1.5 rounded bg-gray-100 text-gray-600'><b>Q${i}: Unattempted</b> (Sahi: ${correct || 'N/A'}) [0]</div>`;
           }
         } else {
-          unattempted++;
-          statusText = "<span class='text-gray-500 font-bold'>Unattempted (0)</span>";
-          reviewHtml += `<div class='p-1.5 rounded bg-gray-100 text-gray-600'><b>Q${i}: Unattempted</b> (Sahi: ${correct || 'N/A'}) [0]</div>`;
+          if (user) {
+            right++; targetStats.r++;
+            statusText = `<span class='text-blue-600 font-bold'>Attempted: ${user}</span>`;
+            reviewHtml += `<div class='p-1.5 rounded bg-blue-50 border border-blue-200 text-blue-700'><b>Q${i}: Attempted</b> (Option Chosen: ${user})</div>`;
+          } else {
+            unattempted++; targetStats.l++;
+            statusText = "<span class='text-gray-500 font-bold'>Unattempted</span>";
+            reviewHtml += `<div class='p-1.5 rounded bg-gray-100 text-gray-600'><b>Q${i}: Unattempted</b></div>`;
+          }
         }
 
-        // Update Subject Stats
-        let targetStats = (i <= 45) ? phyStats : (i <= 90) ? chemStats : bioStats;
-        if (user) {
-          if (isCorrect) { targetStats.score += 4; targetStats.r++; }
-          else { targetStats.score -= 1; targetStats.w++; }
-        } else {
-          targetStats.l++;
-        }
-
-        // Build Topic Analysis Card
-        analysisHtml += `
-          <div class="p-2 border rounded-lg bg-white shadow-sm">
+        let itemCard = `
+          <div class="p-2 border rounded-lg bg-gray-50 shadow-sm">
             <div class="flex justify-between items-center">
-              <span class="font-bold text-gray-800">Q${i} [${info.subject}]</span>
+              <span class="font-bold text-gray-800">Q${i}</span>
               <span>${statusText}</span>
             </div>
             <div class="text-[11px] text-gray-600 mt-0.5">
@@ -454,32 +471,47 @@
             </div>
           </div>
         `;
+
+        if (i <= 45) phyHtml += itemCard;
+        else if (i <= 90) chemHtml += itemCard;
+        else bioHtml += itemCard;
       }
 
-      // Display Overall Score
-      document.getElementById('scoreDisplay').innerText = `Marks: ${score} / ${totalQuestions * 4}`;
-      document.getElementById('correctCount').innerText = `Right: ${right}`;
-      document.getElementById('wrongCount').innerText = `Wrong: ${wrong}`;
-      document.getElementById('unattCount').innerText = `Left: ${unattempted}`;
+      if (hasKey) {
+        document.getElementById('scoreDisplay').innerText = `Marks: ${score} / ${totalQuestions * 4}`;
+        document.getElementById('correctCount').innerText = `Right: ${right}`;
+        document.getElementById('wrongCount').innerText = `Wrong: ${wrong}`;
+        document.getElementById('unattCount').innerText = `Left: ${unattempted}`;
 
-      // Display Subject-Wise Stats
-      document.getElementById('phyScore').innerText = `${phyStats.score}/180`;
+        document.getElementById('phyScore').innerText = `${phyStats.score}/180`;
+        document.getElementById('chemScore').innerText = `${chemStats.score}/180`;
+        document.getElementById('bioScore').innerText = `${bioStats.score}/360`;
+      } else {
+        document.getElementById('scoreDisplay').innerText = `Attempted: ${right} / ${totalQuestions}`;
+        document.getElementById('summaryBox').innerHTML = `<div class='text-blue-600 text-xs font-bold'>⚠️ Answer key missing. Displaying Attempt Summary.</div>`;
+
+        document.getElementById('phyScore').innerText = `${phyStats.r} Attempted`;
+        document.getElementById('chemScore').innerText = `${chemStats.r} Attempted`;
+        document.getElementById('bioScore').innerText = `${bioStats.r} Attempted`;
+      }
+
       document.getElementById('phyR').innerText = phyStats.r;
       document.getElementById('phyW').innerText = phyStats.w;
       document.getElementById('phyL').innerText = phyStats.l;
 
-      document.getElementById('chemScore').innerText = `${chemStats.score}/180`;
       document.getElementById('chemR').innerText = chemStats.r;
       document.getElementById('chemW').innerText = chemStats.w;
       document.getElementById('chemL').innerText = chemStats.l;
 
-      document.getElementById('bioScore').innerText = `${bioStats.score}/360`;
       document.getElementById('bioR').innerText = bioStats.r;
       document.getElementById('bioW').innerText = bioStats.w;
       document.getElementById('bioL').innerText = bioStats.l;
 
+      document.getElementById('phyAnalysisBox').innerHTML = phyHtml;
+      document.getElementById('chemAnalysisBox').innerHTML = chemHtml;
+      document.getElementById('bioAnalysisBox').innerHTML = bioHtml;
+
       document.getElementById('reviewGrid').innerHTML = reviewHtml;
-      document.getElementById('analysisBox').innerHTML = analysisHtml;
     }
   </script>
 </body>
