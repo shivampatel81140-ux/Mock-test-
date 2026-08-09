@@ -10,7 +10,7 @@
 <body class="bg-gray-100 min-h-screen font-sans">
 
   <!-- Header -->
-  <header id="topHeader" class="bg-white p-3 shadow-md flex justify-between items-center sticky top-0 z-50">
+  <header id="topHeader" class="bg-white p-3 shadow-md flex justify-between items-center sticky top-0 z-40">
     <div>
       <h1 class="text-base font-bold text-blue-600">NEET Mock Portal</h1>
       <p id="qIndicator" class="text-xs font-semibold text-gray-500">Full Paper View</p>
@@ -44,20 +44,49 @@
   </div>
 
   <!-- Main Test Area -->
-  <div id="testArea" class="hidden flex-col items-center pb-44">
+  <div id="testArea" class="hidden flex-col items-center pb-48">
     
     <!-- Full-Width Scrollable PDF Container -->
     <div id="pdfViewerContainer" class="w-full max-w-3xl flex flex-col items-center space-y-3 p-2 my-2">
-      <!-- PDF Pages will be appended dynamically here -->
+      <!-- PDF Pages rendered here -->
+    </div>
+
+    <!-- Full OMR Grid Modal Overlay (Hidden by Default) -->
+    <div id="omrGridModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-lg rounded-2xl p-4 max-h-[80vh] flex flex-col shadow-2xl">
+        <div class="flex justify-between items-center mb-3 border-b pb-2">
+          <h3 class="font-bold text-gray-800 text-sm">Question Palette (1-180)</h3>
+          <button onclick="toggleOmrGrid()" class="text-gray-500 font-bold text-lg hover:text-black">&times;</button>
+        </div>
+        
+        <!-- Shortcut Jump Buttons for Subjects -->
+        <div class="flex justify-around mb-3 text-xs">
+          <button onclick="jumpToQ(1)" class="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-lg font-bold">Physics (Q1)</button>
+          <button onclick="jumpToQ(46)" class="bg-purple-100 text-purple-800 px-2.5 py-1 rounded-lg font-bold">Chemistry (Q46)</button>
+          <button onclick="jumpToQ(91)" class="bg-green-100 text-green-800 px-2.5 py-1 rounded-lg font-bold">Biology (Q91)</button>
+        </div>
+
+        <!-- 1 to 180 Number Grid -->
+        <div id="gridNumbers" class="grid grid-cols-6 sm:grid-cols-10 gap-2 overflow-y-auto p-1 text-xs">
+          <!-- Dynamically populated buttons -->
+        </div>
+
+        <button onclick="toggleOmrGrid()" class="mt-3 w-full bg-gray-200 text-gray-800 py-2 rounded-xl font-bold text-xs">
+          Close Palette
+        </button>
+      </div>
     </div>
 
     <!-- Floating Bottom OMR & Control Bar -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-2xl z-50 max-w-3xl mx-auto rounded-t-2xl">
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-2xl z-40 max-w-3xl mx-auto rounded-t-2xl">
       <div class="flex justify-between items-center mb-2 px-1">
         <span id="activeQText" class="text-sm font-bold text-blue-700">Question 1 / 180</span>
-        <div class="space-x-1">
-          <button onclick="changeQ(-1)" class="bg-gray-200 text-gray-700 text-xs px-3 py-1.5 rounded-lg font-bold">← Prev Q</button>
-          <button onclick="changeQ(1)" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold">Next Q →</button>
+        <div class="space-x-1 flex items-center">
+          <button onclick="toggleOmrGrid()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 shadow">
+            <span>📑</span> OMR Grid
+          </button>
+          <button onclick="changeQ(-1)" class="bg-gray-200 text-gray-700 text-xs px-2.5 py-1.5 rounded-lg font-bold">← Prev</button>
+          <button onclick="changeQ(1)" class="bg-blue-600 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Next →</button>
         </div>
       </div>
 
@@ -105,7 +134,7 @@
     let timeRemaining = 10800;
     let timerInterval = null;
 
-    // Answer Key File Upload Listener (Auto Fill Textarea / Extract Text)
+    // Answer Key File Upload Listener
     document.getElementById('keyFileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -121,7 +150,6 @@
         reader.onload = function(evt) {
           const typedarray = new Uint8Array(evt.target.result);
           pdfjsLib.getDocument(typedarray).promise.then(pdf => {
-            let extractedText = "";
             let countPromises = [];
             for (let i = 1; i <= pdf.numPages; i++) {
               countPromises.push(pdf.getPage(i).then(page => {
@@ -131,8 +159,7 @@
               }));
             }
             Promise.all(countPromises).then(pagesText => {
-              extractedText = pagesText.join(" ");
-              document.getElementById('answerKeyInput').value = extractedText;
+              document.getElementById('answerKeyInput').value = pagesText.join(" ");
             });
           });
         };
@@ -149,7 +176,6 @@
         return;
       }
 
-      // Extract options A, B, C, D from text or file
       const matches = keyRaw.match(/[A-Da-d]/g);
       if (matches && matches.length > 0) {
         correctAnswers = matches.map(x => x.toUpperCase());
@@ -201,6 +227,45 @@
           page.render({ canvasContext: ctx, viewport: viewport });
         });
       }
+    }
+
+    function toggleOmrGrid() {
+      const modal = document.getElementById('omrGridModal');
+      if (modal.classList.contains('hidden')) {
+        buildOmrGrid();
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function buildOmrGrid() {
+      const container = document.getElementById('gridNumbers');
+      container.innerHTML = '';
+
+      for (let i = 1; i <= totalQuestions; i++) {
+        const btn = document.createElement('button');
+        btn.innerText = i;
+        
+        let btnStyle = "p-2 rounded-lg font-bold text-center border text-xs ";
+        if (i === currentQ) {
+          btnStyle += "bg-blue-600 text-white border-blue-700 ring-2 ring-blue-300";
+        } else if (userAnswers[i]) {
+          btnStyle += "bg-green-500 text-white border-green-600";
+        } else {
+          btnStyle += "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200";
+        }
+
+        btn.className = btnStyle;
+        btn.onclick = () => jumpToQ(i);
+        container.appendChild(btn);
+      }
+    }
+
+    function jumpToQ(qNum) {
+      currentQ = qNum;
+      updateActiveQ();
+      document.getElementById('omrGridModal').classList.add('hidden');
     }
 
     function selectAns(ans) {
