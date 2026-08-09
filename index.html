@@ -24,11 +24,19 @@
   <div id="setupSection" class="max-w-md mx-auto my-6 bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
     <h2 class="text-xl font-bold mb-4 text-gray-800">Setup Your Test</h2>
     
-    <label class="block text-xs font-bold text-gray-600 mb-1">Select NEET Question Paper (PDF):</label>
+    <!-- Question Paper File Input -->
+    <label class="block text-xs font-bold text-gray-600 mb-1">1. Select Question Paper (PDF):</label>
     <input type="file" id="pdfInput" accept=".pdf" class="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700">
     
+    <!-- Answer Key File Input -->
+    <label class="block text-xs font-bold text-gray-600 mb-1">2. Upload Answer Key File (PDF / TXT):</label>
+    <input type="file" id="keyFileInput" accept=".pdf,.txt" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-purple-600 file:text-white file:font-semibold hover:file:bg-purple-700">
+    
+    <div class="text-center my-2 text-xs font-bold text-gray-400">--- YA PHIR PASTE KAREIN ---</div>
+
+    <!-- Manual Answer Key Textarea -->
     <label class="block text-xs font-bold text-gray-600 mb-1">Paste Answer Key (Comma Separated A,B,C,D...):</label>
-    <textarea id="answerKeyInput" class="w-full h-28 p-3 border rounded-xl mb-4 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Example: A,B,C,D,A,C,D,B... (180 answers)"></textarea>
+    <textarea id="answerKeyInput" class="w-full h-20 p-3 border rounded-xl mb-4 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Example: A,B,C,D,A,C,D,B..."></textarea>
     
     <button id="startBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow-md transition">
       🚀 Start Test (Full Screen View)
@@ -97,6 +105,41 @@
     let timeRemaining = 10800;
     let timerInterval = null;
 
+    // Answer Key File Upload Listener (Auto Fill Textarea / Extract Text)
+    document.getElementById('keyFileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.name.endsWith('.txt')) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          document.getElementById('answerKeyInput').value = evt.target.result;
+        };
+        reader.readAsText(file);
+      } else if (file.name.endsWith('.pdf')) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const typedarray = new Uint8Array(evt.target.result);
+          pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+            let extractedText = "";
+            let countPromises = [];
+            for (let i = 1; i <= pdf.numPages; i++) {
+              countPromises.push(pdf.getPage(i).then(page => {
+                return page.getTextContent().then(textContent => {
+                  return textContent.items.map(item => item.str).join(" ");
+                });
+              }));
+            }
+            Promise.all(countPromises).then(pagesText => {
+              extractedText = pagesText.join(" ");
+              document.getElementById('answerKeyInput').value = extractedText;
+            });
+          });
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    });
+
     document.getElementById('startBtn').onclick = () => {
       const fileInput = document.getElementById('pdfInput');
       const keyRaw = document.getElementById('answerKeyInput').value;
@@ -106,7 +149,13 @@
         return;
       }
 
-      correctAnswers = keyRaw.replace(/\s/g, '').split(',').map(x => x.toUpperCase());
+      // Extract options A, B, C, D from text or file
+      const matches = keyRaw.match(/[A-Da-d]/g);
+      if (matches && matches.length > 0) {
+        correctAnswers = matches.map(x => x.toUpperCase());
+      } else {
+        correctAnswers = [];
+      }
 
       const file = fileInput.files[0];
       const reader = new FileReader();
