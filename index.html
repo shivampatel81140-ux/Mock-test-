@@ -3,112 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEET Quiz Portal</title>
+  <title>NEET Quiz Builder</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 min-h-screen p-2 md:p-6 font-sans">
+<body class="bg-gray-100 p-4">
 
-  <!-- Header -->
-  <div class="max-w-xl mx-auto bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-4 flex justify-between items-center">
-    <div>
-      <h1 class="font-bold text-gray-800">NEET Mock Test</h1>
-      <p class="text-xs text-gray-500" id="qIndicator">Q 1 / 180</p>
-    </div>
-    <div class="text-right">
-      <span id="timer" class="text-sm font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-100">03:00:00</span>
-    </div>
+  <!-- Switcher -->
+  <div class="max-w-xl mx-auto mb-4 flex gap-2">
+    <button onclick="switchMode('entry')" class="flex-1 bg-gray-800 text-white py-2 rounded-lg font-bold">Admin Mode (Add Q)</button>
+    <button onclick="switchMode('exam')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold">Exam Mode (Test)</button>
   </div>
 
-  <!-- Quiz Card -->
-  <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-    <!-- Question Display -->
-    <div id="questionText" class="text-lg font-medium text-gray-800 mb-6 leading-relaxed">
-      Loading Question...
-    </div>
-
-    <!-- Options Display -->
-    <div id="optionsContainer" class="space-y-3">
-      <!-- Options will be injected here -->
-    </div>
+  <!-- ENTRY MODE -->
+  <div id="entryMode" class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow">
+    <h2 class="text-xl font-bold mb-4">Add Question</h2>
+    <textarea id="qText" placeholder="Question yahan likhein..." class="w-full p-3 border rounded-lg mb-2"></textarea>
+    <input type="text" id="optA" placeholder="Option A" class="w-full p-2 border rounded-lg mb-1">
+    <input type="text" id="optB" placeholder="Option B" class="w-full p-2 border rounded-lg mb-1">
+    <input type="text" id="optC" placeholder="Option C" class="w-full p-2 border rounded-lg mb-1">
+    <input type="text" id="optD" placeholder="Option D" class="w-full p-2 border rounded-lg mb-4">
+    <button onclick="addQ()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold">Add Question to Bank</button>
+    <p id="statusMsg" class="mt-4 text-sm text-green-600 font-bold"></p>
   </div>
 
-  <!-- Navigation Bar -->
-  <div class="max-w-xl mx-auto mt-6 flex justify-between items-center">
-    <button onclick="prevQuestion()" class="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-50">Prev</button>
-    <button onclick="submitExam()" class="bg-red-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700">Submit</button>
-    <button onclick="nextQuestion()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700">Next</button>
+  <!-- EXAM MODE -->
+  <div id="examMode" class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow hidden">
+    <div class="flex justify-between items-center mb-4 border-b pb-2">
+      <h2 class="font-bold text-gray-700" id="qNum">Q 1</h2>
+      <div id="timer" class="text-red-600 font-bold">03:00:00</div>
+    </div>
+    <p id="qDisplay" class="text-lg font-medium mb-6"></p>
+    <div id="optionsDisplay" class="space-y-3"></div>
+    <div class="mt-8 flex gap-4">
+      <button onclick="prevQ()" class="flex-1 bg-gray-200 py-3 rounded-lg font-bold">Prev</button>
+      <button onclick="nextQ()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold">Next</button>
+    </div>
   </div>
 
   <script>
-    // --- APP CONFIGURATION ---
-    // Yahan aap apne questions daal sakte hain
-    const questions = [
-      { id: 1, text: "The acceleration due to gravity is?", options: ["9.8 m/s²", "10 m/s²", "9.0 m/s²", "None"], correct: "A" },
-      { id: 2, text: "Which gas is used in balloons?", options: ["Oxygen", "Helium", "Nitrogen", "CO2"], correct: "B" },
-      { id: 3, text: "Power of a lens is measured in?", options: ["Watts", "Dioptre", "Joules", "Ohms"], correct: "B" }
-    ];
+    let questions = JSON.parse(localStorage.getItem('neet_questions') || '[]');
+    let current = 0;
 
-    let currentQIndex = 0;
-    let userAnswers = {}; // { 0: "A", 1: "C" ... }
-    let timeRemaining = 10800;
+    // --- ADMIN FUNCTIONS ---
+    function addQ() {
+      const q = {
+        text: document.getElementById('qText').value,
+        options: [document.getElementById('optA').value, document.getElementById('optB').value, document.getElementById('optC').value, document.getElementById('optD').value]
+      };
+      questions.push(q);
+      localStorage.setItem('neet_questions', JSON.stringify(questions));
+      document.getElementById('statusMsg').innerText = "Question Saved! Total: " + questions.length;
+      document.getElementById('qText').value = ''; // clear
+    }
 
-    // --- LOGIC ---
-    function updateUI() {
-      const q = questions[currentQIndex];
-      document.getElementById('qIndicator').innerText = `Q ${currentQIndex + 1} / ${questions.length}`;
-      document.getElementById('questionText').innerText = `${q.id}. ${q.text}`;
-      
-      const container = document.getElementById('optionsContainer');
-      container.innerHTML = '';
-      
-      q.options.forEach((opt, index) => {
-        const optionLabel = ['A', 'B', 'C', 'D'][index];
-        const isSelected = userAnswers[currentQIndex] === optionLabel;
-        
+    // --- EXAM FUNCTIONS ---
+    function switchMode(m) {
+      if(m === 'entry') {
+        document.getElementById('entryMode').classList.remove('hidden');
+        document.getElementById('examMode').classList.add('hidden');
+      } else {
+        document.getElementById('entryMode').classList.add('hidden');
+        document.getElementById('examMode').classList.remove('hidden');
+        renderExam();
+      }
+    }
+
+    function renderExam() {
+      if(questions.length === 0) { alert("Pehle questions add karein!"); return; }
+      const item = questions[current];
+      document.getElementById('qNum').innerText = `Q ${current + 1} / ${questions.length}`;
+      document.getElementById('qDisplay').innerText = item.text;
+      const opDiv = document.getElementById('optionsDisplay');
+      opDiv.innerHTML = '';
+      item.options.forEach(opt => {
         const btn = document.createElement('button');
-        btn.className = `w-full text-left p-4 rounded-xl border-2 transition-all ${isSelected ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-gray-200 hover:border-gray-300'}`;
-        btn.innerHTML = `<span class="font-bold mr-3">${optionLabel})</span> ${opt}`;
-        btn.onclick = () => selectOption(optionLabel);
-        container.appendChild(btn);
+        btn.className = "w-full text-left p-4 rounded-xl border border-gray-200 hover:bg-blue-50";
+        btn.innerText = opt;
+        opDiv.appendChild(btn);
       });
     }
 
-    function selectOption(opt) {
-      userAnswers[currentQIndex] = opt;
-      updateUI();
-    }
-
-    function nextQuestion() {
-      if (currentQIndex < questions.length - 1) {
-        currentQIndex++;
-        updateUI();
-      }
-    }
-
-    function prevQuestion() {
-      if (currentQIndex > 0) {
-        currentQIndex--;
-        updateUI();
-      }
-    }
-
-    // Timer Logic
-    setInterval(() => {
-      timeRemaining--;
-      let h = Math.floor(timeRemaining / 3600);
-      let m = Math.floor((timeRemaining % 3600) / 60);
-      let s = timeRemaining % 60;
-      document.getElementById('timer').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-    }, 1000);
-
-    function submitExam() {
-        if(confirm("Submit final exam?")) {
-            alert("Exam submitted! Score: " + Object.keys(userAnswers).length);
-        }
-    }
-
-    // Initialize
-    updateUI();
+    function nextQ() { if(current < questions.length -1) { current++; renderExam(); } }
+    function prevQ() { if(current > 0) { current--; renderExam(); } }
   </script>
 </body>
 </html>
