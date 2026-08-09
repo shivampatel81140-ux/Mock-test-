@@ -295,6 +295,7 @@
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
         pdfDoc.getPage(pageNum).then(page => {
           const canvas = document.createElement('canvas');
+          canvas.id = "pdf-page-" + pageNum;
           canvas.className = "shadow-md rounded-lg bg-white w-full my-1 border";
           container.appendChild(canvas);
 
@@ -349,6 +350,15 @@
       currentQ = qNum;
       updateActiveQ();
       document.getElementById('omrGridModal').classList.add('hidden');
+
+      // Auto-calculate approximate PDF page and scroll PDF canvas into view
+      if (pdfDoc && pdfDoc.numPages) {
+        let estimatedPage = Math.min(Math.ceil((qNum / totalQuestions) * pdfDoc.numPages), pdfDoc.numPages);
+        let targetCanvas = document.getElementById("pdf-page-" + estimatedPage);
+        if (targetCanvas) {
+          targetCanvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
     }
 
     function selectAns(ans) {
