@@ -3,27 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mock Test Portal</title>
+  <title>NEET Mock Test Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center p-3">
 
   <!-- Header -->
-  <header class="w-full max-w-4xl bg-white p-4 rounded-xl shadow mb-4 flex justify-between items-center">
+  <header class="w-full max-w-5xl bg-white p-4 rounded-xl shadow mb-3 flex justify-between items-center">
     <div>
-      <h1 class="text-xl font-bold text-blue-600">Online Mock Test Portal</h1>
-      <p class="text-xs text-gray-500">PDF dekhein aur Answer Sheet fill karein</p>
+      <h1 class="text-xl font-bold text-blue-600">NEET Mock Test Portal</h1>
+      <p class="text-xs text-gray-500">Full Length Mock Exam (180 Questions / 3 Hours)</p>
     </div>
     <div id="timerBox" class="hidden text-right">
-      <span id="timer" class="text-lg font-bold text-red-600 bg-red-50 px-3 py-1 rounded border border-red-200">Time Left: 15:00</span>
+      <span id="timer" class="text-lg font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">Time Left: 03:00:00</span>
     </div>
   </header>
 
-  <!-- Setup / Upload Section -->
-  <div id="setupSection" class="w-full max-w-4xl bg-white p-6 rounded-xl shadow text-center">
-    <h2 class="text-lg font-bold text-gray-800 mb-2">Step 1: Upload Question Paper (PDF)</h2>
-    <p class="text-gray-500 text-sm mb-4">Koi bhi PDF upload karein (Scanned, Photo, ya Typed)</p>
-
+  <!-- Setup Section -->
+  <div id="setupSection" class="w-full max-w-xl bg-white p-6 rounded-xl shadow text-center">
+    <h2 class="text-lg font-bold text-gray-800 mb-2">Upload NEET Paper (PDF)</h2>
+    
     <div class="border-2 border-dashed border-gray-300 p-6 rounded-lg mb-4">
       <input type="file" id="pdfInput" accept=".pdf" class="hidden" />
       <label for="pdfInput" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg cursor-pointer hover:bg-blue-700 font-semibold inline-block">
@@ -32,109 +32,169 @@
       <p id="fileName" class="text-sm text-green-600 mt-2 font-medium"></p>
     </div>
 
-    <div class="mb-4 text-left max-w-xs mx-auto">
-      <label class="block text-xs font-bold text-gray-600 mb-1">Kul Kitne Questions Hain?</label>
-      <input type="number" id="numQuestions" value="10" min="1" max="200" class="w-full p-2 border rounded-lg text-center font-bold text-gray-700" />
+    <div class="grid grid-cols-2 gap-3 mb-4 text-left">
+      <div>
+        <label class="block text-xs font-bold text-gray-600 mb-1">Total Questions</label>
+        <input type="number" id="numQuestions" value="180" min="1" max="200" class="w-full p-2 border rounded-lg text-center font-bold text-gray-700" />
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-600 mb-1">Time (Minutes)</label>
+        <input type="number" id="timeMinutes" value="180" min="1" max="300" class="w-full p-2 border rounded-lg text-center font-bold text-gray-700" />
+      </div>
     </div>
 
     <button id="startTestBtn" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 hidden text-base shadow">
-      🚀 Start Live Exam
+      🚀 Start NEET Exam
     </button>
   </div>
 
-  <!-- Main Test Area (Split View) -->
-  <div id="testArea" class="w-full max-w-5xl hidden flex-col md:flex-row gap-4">
+  <!-- Main Test Area -->
+  <div id="testArea" class="w-full max-w-6xl hidden flex-col md:flex-row gap-4">
     
-    <!-- Left: PDF Display Window -->
-    <div class="w-full md:w-3/5 bg-white p-2 rounded-xl shadow h-[500px] flex flex-col">
-      <div class="text-xs font-bold text-gray-500 mb-1 px-2">📄 Question Paper Window</div>
-      <iframe id="pdfFrame" class="w-full h-full rounded border" src=""></iframe>
+    <!-- Left: Canvas-based PDF Rendering Window -->
+    <div class="w-full md:w-3/5 bg-white p-2 rounded-xl shadow h-[580px] flex flex-col">
+      <div class="flex justify-between items-center px-2 py-1 bg-gray-50 border-b rounded-t mb-2">
+        <span class="text-xs font-bold text-gray-600">📄 PDF Paper Viewer</span>
+        <div class="space-x-2">
+          <button id="prevPage" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded font-bold hover:bg-blue-200">← Prev Page</button>
+          <span id="pageNum" class="text-xs font-bold text-gray-700">Page 1 / 1</span>
+          <button id="nextPage" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded font-bold hover:bg-blue-200">Next Page →</button>
+        </div>
+      </div>
+      <div class="w-full flex-1 overflow-auto bg-gray-200 rounded p-1 flex justify-center">
+        <canvas id="pdfCanvas" class="shadow rounded bg-white my-auto"></canvas>
+      </div>
     </div>
 
     <!-- Right: Digital OMR Answer Sheet -->
-    <div class="w-full md:w-2/5 bg-white p-4 rounded-xl shadow h-[500px] flex flex-col justify-between">
+    <div class="w-full md:w-2/5 bg-white p-4 rounded-xl shadow h-[580px] flex flex-col justify-between">
       <div>
         <div class="flex justify-between items-center border-b pb-2 mb-3">
-          <h3 class="font-bold text-gray-800">Answer Sheet (OMR)</h3>
-          <span id="questionProgress" class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">Q 1</span>
+          <h3 class="font-bold text-gray-800">OMR Answer Sheet</h3>
+          <span id="questionProgress" class="text-xs font-bold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full">Q 1 / 180</span>
         </div>
 
-        <!-- Question Navigation Grid -->
-        <div id="questionPalette" class="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto mb-4 p-1 border rounded bg-gray-50"></div>
+        <!-- Question Grid Palette -->
+        <div id="questionPalette" class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto mb-4 p-2 border rounded bg-gray-50"></div>
 
         <!-- Active Question Options -->
-        <div class="bg-blue-50/50 p-4 rounded-lg border border-blue-100">
-          <p id="activeQNum" class="font-bold text-gray-800 mb-3">Select Option for Question 1:</p>
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick="selectOption('A')" class="opt-btn bg-white border hover:bg-blue-50 py-2.5 rounded-lg font-bold text-gray-700">A</button>
-            <button onclick="selectOption('B')" class="opt-btn bg-white border hover:bg-blue-50 py-2.5 rounded-lg font-bold text-gray-700">B</button>
-            <button onclick="selectOption('C')" class="opt-btn bg-white border hover:bg-blue-50 py-2.5 rounded-lg font-bold text-gray-700">C</button>
-            <button onclick="selectOption('D')" class="opt-btn bg-white border hover:bg-blue-50 py-2.5 rounded-lg font-bold text-gray-700">D</button>
+        <div class="bg-blue-50/60 p-4 rounded-xl border border-blue-100">
+          <p id="activeQNum" class="font-bold text-gray-800 mb-3 text-sm">Select Answer for Question 1:</p>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button onclick="selectOption('A')" class="opt-btn bg-white border hover:bg-blue-50 py-3 rounded-xl font-bold text-gray-700">A</button>
+            <button onclick="selectOption('B')" class="opt-btn bg-white border hover:bg-blue-50 py-3 rounded-xl font-bold text-gray-700">B</button>
+            <button onclick="selectOption('C')" class="opt-btn bg-white border hover:bg-blue-50 py-3 rounded-xl font-bold text-gray-700">C</button>
+            <button onclick="selectOption('D')" class="opt-btn bg-white border hover:bg-blue-50 py-3 rounded-xl font-bold text-gray-700">D</button>
           </div>
         </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex gap-2 pt-3 border-t">
-        <button id="prevBtn" onclick="changeQ(-1)" class="w-1/2 bg-gray-200 text-gray-700 font-bold py-2 rounded-lg hover:bg-gray-300">Previous</button>
-        <button id="nextBtn" onclick="changeQ(1)" class="w-1/2 bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700">Next</button>
+      <div>
+        <div class="flex gap-2 pt-2">
+          <button onclick="changeQ(-1)" class="w-1/2 bg-gray-200 text-gray-700 font-bold py-2 rounded-lg hover:bg-gray-300 text-sm">Previous Question</button>
+          <button onclick="changeQ(1)" class="w-1/2 bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 text-sm">Next Question</button>
+        </div>
+        <button onclick="submitExam()" class="w-full bg-red-600 text-white font-bold py-2.5 rounded-lg hover:bg-red-700 mt-2 text-sm shadow">
+          Submit Final Exam
+        </button>
       </div>
-      
-      <button onclick="submitExam()" class="w-full bg-red-600 text-white font-bold py-2.5 rounded-lg hover:bg-red-700 mt-2">
-        Submit Final Test
-      </button>
     </div>
 
   </div>
 
   <!-- Result Screen -->
-  <div id="resultSection" class="w-full max-w-lg bg-white p-6 rounded-xl shadow hidden text-center">
-    <h2 class="text-2xl font-bold text-gray-800 mb-1">Exam Submitted! 🎉</h2>
-    <p class="text-sm text-gray-500 mb-6">Aapki Response Sheet ready hai.</p>
+  <div id="resultSection" class="w-full max-w-md bg-white p-6 rounded-xl shadow hidden text-center">
+    <h2 class="text-2xl font-bold text-gray-800 mb-1">NEET Exam Submitted! 🎉</h2>
+    <p class="text-sm text-gray-500 mb-6">Aapka Final Performance Summary</p>
 
-    <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 mb-6">
-      <p class="text-sm font-semibold text-gray-600">Total Questions Answered:</p>
-      <div id="attemptedScore" class="text-3xl font-extrabold text-blue-600 my-1">0 / 0</div>
+    <div class="bg-blue-50 p-5 rounded-xl border border-blue-200 mb-6 space-y-2">
+      <p class="text-xs font-bold text-gray-500 uppercase">Attempted Questions</p>
+      <div id="attemptedScore" class="text-4xl font-extrabold text-blue-600">0 / 180</div>
     </div>
 
-    <button onclick="location.reload()" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700">
-      Start New Exam
+    <button onclick="location.reload()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700">
+      Start New Test
     </button>
   </div>
 
   <script>
-    let totalQuestions = 10;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    let totalQuestions = 180;
     let currentQ = 1;
     let answers = {};
     let timerInterval = null;
-    let timeRemaining = 900; // 15 minutes
+    let timeRemaining = 10800;
+
+    let pdfDoc = null;
+    let pageNum = 1;
+    let canvas = document.getElementById('pdfCanvas');
+    let ctx = canvas.getContext('2d');
 
     const pdfInput = document.getElementById('pdfInput');
     const fileNameDisplay = document.getElementById('fileName');
     const startTestBtn = document.getElementById('startTestBtn');
-    let pdfUrl = null;
 
     pdfInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
         const file = e.target.files[0];
-        pdfUrl = URL.createObjectURL(file);
         fileNameDisplay.textContent = `Selected: ${file.name}`;
         startTestBtn.classList.remove('hidden');
+
+        const fileReader = new FileReader();
+        fileReader.onload = function () {
+          const typedarray = new Uint8Array(this.result);
+          pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+            pdfDoc = pdf;
+            pageNum = 1;
+          });
+        };
+        fileReader.readAsArrayBuffer(file);
       }
     });
 
     startTestBtn.addEventListener('click', () => {
-      totalQuestions = parseInt(document.getElementById('numQuestions').value) || 10;
+      totalQuestions = parseInt(document.getElementById('numQuestions').value) || 180;
+      let mins = parseInt(document.getElementById('timeMinutes').value) || 180;
+      timeRemaining = mins * 60;
+
       document.getElementById('setupSection').classList.add('hidden');
       document.getElementById('testArea').classList.remove('hidden');
       document.getElementById('testArea').classList.add('flex');
       document.getElementById('timerBox').classList.remove('hidden');
-      
-      document.getElementById('pdfFrame').src = pdfUrl;
-      
+
+      if (pdfDoc) renderPage(pageNum);
       initPalette();
       loadActiveQ();
       startTimer();
+    });
+
+    function renderPage(num) {
+      pdfDoc.getPage(num).then(page => {
+        const viewport = page.getViewport({ scale: 1.2 });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+        page.render(renderContext);
+        document.getElementById('pageNum').textContent = `Page ${num} / ${pdfDoc.numPages}`;
+      });
+    }
+
+    document.getElementById('prevPage').addEventListener('click', () => {
+      if (pageNum <= 1) return;
+      pageNum--;
+      renderPage(pageNum);
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => {
+      if (pageNum >= pdfDoc.numPages) return;
+      pageNum++;
+      renderPage(pageNum);
     });
 
     function initPalette() {
@@ -151,21 +211,19 @@
     }
 
     function loadActiveQ() {
-      document.getElementById('questionProgress').textContent = `Q ${currentQ} of ${totalQuestions}`;
-      document.getElementById('activeQNum').textContent = `Question ${currentQ} ka Answer chunein:`;
-      
-      // Update buttons highlight
+      document.getElementById('questionProgress').textContent = `Q ${currentQ} / ${totalQuestions}`;
+      document.getElementById('activeQNum').textContent = `Select Answer for Question ${currentQ}:`;
+
       const buttons = document.querySelectorAll('.opt-btn');
       buttons.forEach(btn => {
         const opt = btn.textContent;
         if (answers[currentQ] === opt) {
-          btn.className = "opt-btn bg-blue-600 text-white border-blue-600 py-2.5 rounded-lg font-bold shadow";
+          btn.className = "opt-btn bg-blue-600 text-white border-blue-600 py-3 rounded-xl font-bold shadow";
         } else {
-          btn.className = "opt-btn bg-white border hover:bg-blue-50 py-2.5 rounded-lg font-bold text-gray-700";
+          btn.className = "opt-btn bg-white border hover:bg-blue-50 py-3 rounded-xl font-bold text-gray-700";
         }
       });
 
-      // Highlight active palette btn
       for (let i = 1; i <= totalQuestions; i++) {
         const pBtn = document.getElementById(`palette-${i}`);
         if (pBtn) {
@@ -193,9 +251,11 @@
     function startTimer() {
       timerInterval = setInterval(() => {
         timeRemaining--;
-        let m = Math.floor(timeRemaining / 60);
+        let h = Math.floor(timeRemaining / 3600);
+        let m = Math.floor((timeRemaining % 3600) / 60);
         let s = timeRemaining % 60;
-        document.getElementById('timer').textContent = `Time Left: ${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        document.getElementById('timer').textContent = `Time Left: ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        
         if (timeRemaining <= 0) {
           clearInterval(timerInterval);
           submitExam();
@@ -204,7 +264,7 @@
     }
 
     function submitExam() {
-      if (confirm('Kya aap exam submit karna chahte hain?')) {
+      if (confirm('Kya aap NEET Exam submit karna chahte hain?')) {
         clearInterval(timerInterval);
         document.getElementById('testArea').classList.add('hidden');
         document.getElementById('timerBox').classList.add('hidden');
