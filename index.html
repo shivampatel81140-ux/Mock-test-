@@ -78,11 +78,14 @@
       <div class="flex justify-between items-center mb-2 px-1">
         <span id="activeQText" class="text-sm font-bold text-blue-700">Question 1 / 180</span>
         <div class="space-x-1 flex items-center">
-          <button onclick="toggleOmrGrid()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 shadow">
-            <span>📑</span> OMR Grid
+          <button id="showResultBtn" onclick="reopenResultModal()" class="hidden bg-purple-600 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">
+            📊 View Result
           </button>
-          <button onclick="changeQ(-1)" class="bg-gray-200 text-gray-700 text-xs px-2.5 py-1.5 rounded-lg font-bold">← Prev</button>
-          <button onclick="changeQ(1)" class="bg-blue-600 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Next →</button>
+          <button onclick="toggleOmrGrid()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 shadow">
+            <span>📑</span> OMR
+          </button>
+          <button onclick="changeQ(-1)" class="bg-gray-200 text-gray-700 text-xs px-2 py-1.5 rounded-lg font-bold">← Prev</button>
+          <button onclick="changeQ(1)" class="bg-blue-600 text-white text-xs px-2 py-1.5 rounded-lg font-bold">Next →</button>
         </div>
       </div>
 
@@ -100,89 +103,102 @@
 
   </div>
 
-  <!-- Result Section -->
-  <div id="resultSection" class="hidden max-w-xl mx-auto my-6 bg-white p-6 rounded-2xl shadow-xl">
-    <h2 class="text-2xl font-bold mb-2 text-center text-gray-800">NEET Test Result 🎉</h2>
-    <div id="scoreDisplay" class="text-3xl font-extrabold text-blue-600 text-center mb-4"></div>
-    
-    <div id="summaryBox" class="flex justify-around bg-blue-50 p-3 rounded-xl mb-4 text-center font-bold text-xs">
-      <div class="text-green-600" id="correctCount">Right: 0</div>
-      <div class="text-red-600" id="wrongCount">Wrong: 0</div>
-      <div class="text-gray-600" id="unattCount">Left: 0</div>
-    </div>
-
-    <!-- Subject Wise Cards -->
-    <h3 class="font-bold text-sm text-gray-700 mb-2">📊 Subject-Wise Overview</h3>
-    <div class="grid grid-cols-3 gap-2 mb-5 text-xs">
-      <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200">
-        <div class="font-bold text-blue-800 mb-1 text-center">Physics</div>
-        <div id="phyScore" class="font-bold text-blue-600 text-center text-sm">0/180</div>
-        <div class="text-[10px] mt-1 text-gray-600">
-          <div>✅ Right: <span id="phyR" class="font-bold text-green-600">0</span></div>
-          <div>❌ Wrong: <span id="phyW" class="font-bold text-red-600">0</span></div>
-          <div>⏸️ Left: <span id="phyL" class="font-bold text-gray-600">0</span></div>
-        </div>
-      </div>
-      <div class="bg-purple-50 p-2.5 rounded-xl border border-purple-200">
-        <div class="font-bold text-purple-800 mb-1 text-center">Chemistry</div>
-        <div id="chemScore" class="font-bold text-purple-600 text-center text-sm">0/180</div>
-        <div class="text-[10px] mt-1 text-gray-600">
-          <div>✅ Right: <span id="chemR" class="font-bold text-green-600">0</span></div>
-          <div>❌ Wrong: <span id="chemW" class="font-bold text-red-600">0</span></div>
-          <div>⏸️ Left: <span id="chemL" class="font-bold text-gray-600">0</span></div>
-        </div>
-      </div>
-      <div class="bg-green-50 p-2.5 rounded-xl border border-green-200">
-        <div class="font-bold text-green-800 mb-1 text-center">Biology</div>
-        <div id="bioScore" class="font-bold text-green-600 text-center text-sm">0/360</div>
-        <div class="text-[10px] mt-1 text-gray-600">
-          <div>✅ Right: <span id="bioR" class="font-bold text-green-600">0</span></div>
-          <div>❌ Wrong: <span id="bioW" class="font-bold text-red-600">0</span></div>
-          <div>⏸️ Left: <span id="bioL" class="font-bold text-gray-600">0</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SEPARATE SUBJECT-WISE ANALYSIS ACCORDIONS -->
-    <h3 class="font-bold text-sm text-gray-700 mb-2">🔍 Subject-Wise Detailed Analysis</h3>
-    <div class="space-y-2 mb-6">
+  <!-- Result Modal -->
+  <div id="resultSection" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 overflow-y-auto p-4">
+    <div class="max-w-xl mx-auto my-4 bg-white p-6 rounded-2xl shadow-2xl relative">
       
-      <!-- Physics Analysis -->
-      <div class="border border-blue-200 rounded-xl overflow-hidden">
-        <button onclick="toggleSubjectBox('phyAnalysisBox', 'phyArrow')" class="w-full bg-blue-50 text-blue-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
-          <span>⚛️ Physics Analysis (Q1 - Q45)</span>
-          <span id="phyArrow">▼</span>
-        </button>
-        <div id="phyAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+      <button onclick="hideResultModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8 font-bold text-gray-700">&times;</button>
+      
+      <h2 class="text-2xl font-bold mb-1 text-center text-gray-800">NEET Test Result 🎉</h2>
+      <p class="text-center text-xs text-gray-500 mb-4">(Tap on any Question to view it in Paper)</p>
+
+      <div id="scoreDisplay" class="text-3xl font-extrabold text-blue-600 text-center mb-4"></div>
+      
+      <div id="summaryBox" class="flex justify-around bg-blue-50 p-3 rounded-xl mb-4 text-center font-bold text-xs">
+        <div class="text-green-600" id="correctCount">Right: 0</div>
+        <div class="text-red-600" id="wrongCount">Wrong: 0</div>
+        <div class="text-gray-600" id="unattCount">Left: 0</div>
       </div>
 
-      <!-- Chemistry Analysis -->
-      <div class="border border-purple-200 rounded-xl overflow-hidden">
-        <button onclick="toggleSubjectBox('chemAnalysisBox', 'chemArrow')" class="w-full bg-purple-50 text-purple-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
-          <span>🧪 Chemistry Analysis (Q46 - Q90)</span>
-          <span id="chemArrow">▼</span>
-        </button>
-        <div id="chemAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+      <!-- Subject Wise Cards -->
+      <h3 class="font-bold text-sm text-gray-700 mb-2">📊 Subject-Wise Overview</h3>
+      <div class="grid grid-cols-3 gap-2 mb-5 text-xs">
+        <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200">
+          <div class="font-bold text-blue-800 mb-1 text-center">Physics</div>
+          <div id="phyScore" class="font-bold text-blue-600 text-center text-sm">0/180</div>
+          <div class="text-[10px] mt-1 text-gray-600">
+            <div>✅ Right: <span id="phyR" class="font-bold text-green-600">0</span></div>
+            <div>❌ Wrong: <span id="phyW" class="font-bold text-red-600">0</span></div>
+            <div>⏸️ Left: <span id="phyL" class="font-bold text-gray-600">0</span></div>
+          </div>
+        </div>
+        <div class="bg-purple-50 p-2.5 rounded-xl border border-purple-200">
+          <div class="font-bold text-purple-800 mb-1 text-center">Chemistry</div>
+          <div id="chemScore" class="font-bold text-purple-600 text-center text-sm">0/180</div>
+          <div class="text-[10px] mt-1 text-gray-600">
+            <div>✅ Right: <span id="chemR" class="font-bold text-green-600">0</span></div>
+            <div>❌ Wrong: <span id="chemW" class="font-bold text-red-600">0</span></div>
+            <div>⏸️ Left: <span id="chemL" class="font-bold text-gray-600">0</span></div>
+          </div>
+        </div>
+        <div class="bg-green-50 p-2.5 rounded-xl border border-green-200">
+          <div class="font-bold text-green-800 mb-1 text-center">Biology</div>
+          <div id="bioScore" class="font-bold text-green-600 text-center text-sm">0/360</div>
+          <div class="text-[10px] mt-1 text-gray-600">
+            <div>✅ Right: <span id="bioR" class="font-bold text-green-600">0</span></div>
+            <div>❌ Wrong: <span id="bioW" class="font-bold text-red-600">0</span></div>
+            <div>⏸️ Left: <span id="bioL" class="font-bold text-gray-600">0</span></div>
+          </div>
+        </div>
       </div>
 
-      <!-- Biology Analysis -->
-      <div class="border border-green-200 rounded-xl overflow-hidden">
-        <button onclick="toggleSubjectBox('bioAnalysisBox', 'bioArrow')" class="w-full bg-green-50 text-green-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
-          <span>🧬 Biology Analysis (Q91 - Q180)</span>
-          <span id="bioArrow">▼</span>
+      <!-- SEPARATE SUBJECT-WISE ANALYSIS ACCORDIONS -->
+      <h3 class="font-bold text-sm text-gray-700 mb-2">🔍 Subject-Wise Detailed Analysis (Click Q to Inspect)</h3>
+      <div class="space-y-2 mb-6">
+        
+        <!-- Physics Analysis -->
+        <div class="border border-blue-200 rounded-xl overflow-hidden">
+          <button onclick="toggleSubjectBox('phyAnalysisBox', 'phyArrow')" class="w-full bg-blue-50 text-blue-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+            <span>⚛️ Physics Analysis (Q1 - Q45)</span>
+            <span id="phyArrow">▼</span>
+          </button>
+          <div id="phyAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+        </div>
+
+        <!-- Chemistry Analysis -->
+        <div class="border border-purple-200 rounded-xl overflow-hidden">
+          <button onclick="toggleSubjectBox('chemAnalysisBox', 'chemArrow')" class="w-full bg-purple-50 text-purple-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+            <span>🧪 Chemistry Analysis (Q46 - Q90)</span>
+            <span id="chemArrow">▼</span>
+          </button>
+          <div id="chemAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+        </div>
+
+        <!-- Biology Analysis -->
+        <div class="border border-green-200 rounded-xl overflow-hidden">
+          <button onclick="toggleSubjectBox('bioAnalysisBox', 'bioArrow')" class="w-full bg-green-50 text-green-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+            <span>🧬 Biology Analysis (Q91 - Q180)</span>
+            <span id="bioArrow">▼</span>
+          </button>
+          <div id="bioAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+        </div>
+
+      </div>
+
+      <!-- Question Review List -->
+      <h3 class="font-bold text-sm text-gray-700 mb-2">📝 Complete Question Review</h3>
+      <div id="reviewGrid" class="max-h-48 overflow-y-auto space-y-1.5 text-xs p-2 border rounded-xl bg-gray-50 mb-4"></div>
+      
+      <div class="flex gap-2">
+        <button onclick="hideResultModal()" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-300 shadow">
+          Review Question Paper
         </button>
-        <div id="bioAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+        <button onclick="location.reload()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow">
+          New Test
+        </button>
       </div>
 
     </div>
-
-    <!-- Question Review List -->
-    <h3 class="font-bold text-sm text-gray-700 mb-2">📝 Complete Question Review</h3>
-    <div id="reviewGrid" class="max-h-48 overflow-y-auto space-y-1.5 text-xs p-2 border rounded-xl bg-gray-50 mb-4"></div>
-    
-    <button onclick="location.reload()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow">
-      Start New Test
-    </button>
   </div>
 
   <script>
@@ -350,8 +366,8 @@
       currentQ = qNum;
       updateActiveQ();
       document.getElementById('omrGridModal').classList.add('hidden');
+      hideResultModal();
 
-      // Auto-calculate approximate PDF page and scroll PDF canvas into view
       if (pdfDoc && pdfDoc.numPages) {
         let estimatedPage = Math.min(Math.ceil((qNum / totalQuestions) * pdfDoc.numPages), pdfDoc.numPages);
         let targetCanvas = document.getElementById("pdf-page-" + estimatedPage);
@@ -414,14 +430,22 @@
       }
     }
 
+    function hideResultModal() {
+      document.getElementById('resultSection').classList.add('hidden');
+      document.getElementById('showResultBtn').classList.remove('hidden');
+    }
+
+    function reopenResultModal() {
+      document.getElementById('resultSection').classList.remove('hidden');
+    }
+
     function submitTest() {
       if (!confirm('Kya aap exam submit karna chahte hain?')) return;
 
       clearInterval(timerInterval);
-      document.getElementById('testArea').classList.add('hidden');
       document.getElementById('timerBox').classList.add('hidden');
-      document.getElementById('topHeader').classList.add('hidden');
       document.getElementById('resultSection').classList.remove('hidden');
+      document.getElementById('showResultBtn').classList.remove('hidden');
 
       let hasKey = correctAnswers.length > 0;
       let score = 0, right = 0, wrong = 0, unattempted = 0;
@@ -438,47 +462,51 @@
         let correct = hasKey ? correctAnswers[i - 1] : null;
         let info = getSyllabusDetails(i);
 
-        let statusText = "";
+        let statusBadge = "";
+        let cardBgClass = "bg-gray-50 border-gray-200";
         let targetStats = (i <= 45) ? phyStats : (i <= 90) ? chemStats : bioStats;
 
         if (hasKey) {
           if (user) {
             if (correct && user === correct) {
               score += 4; right++; targetStats.score += 4; targetStats.r++;
-              statusText = "<span class='text-green-600 font-bold'>Correct (+4)</span>";
-              reviewHtml += `<div class='p-1.5 rounded bg-green-50 border border-green-200 text-green-700'><b>Q${i}: Correct</b> (Your: ${user} | Sahi: ${correct}) [+4]</div>`;
+              statusBadge = "<span class='bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded-md font-bold'>RIGHT (+4)</span>";
+              cardBgClass = "bg-green-50/50 border-green-200";
+              reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-green-50 border border-green-200 text-green-800 cursor-pointer hover:bg-green-100 flex justify-between items-center'><span><b>Q${i}:</b> Right (Your: ${user} | Sahi: ${correct})</span><span class='text-[10px] bg-green-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
             } else {
               score -= 1; wrong++; targetStats.score -= 1; targetStats.w++;
-              statusText = "<span class='text-red-600 font-bold'>Incorrect (-1)</span>";
-              reviewHtml += `<div class='p-1.5 rounded bg-red-50 border border-red-200 text-red-700'><b>Q${i}: Wrong</b> (Your: ${user} | Sahi: ${correct || 'N/A'}) [-1]</div>`;
+              statusBadge = "<span class='bg-red-100 text-red-800 text-[10px] px-2 py-0.5 rounded-md font-bold'>WRONG (-1)</span>";
+              cardBgClass = "bg-red-50/50 border-red-200";
+              reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-red-50 border border-red-200 text-red-800 cursor-pointer hover:bg-red-100 flex justify-between items-center'><span><b>Q${i}:</b> Wrong ❌ (Your: ${user} | Sahi: ${correct || 'N/A'})</span><span class='text-[10px] bg-red-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
             }
           } else {
             unattempted++; targetStats.l++;
-            statusText = "<span class='text-gray-500 font-bold'>Unattempted (0)</span>";
-            reviewHtml += `<div class='p-1.5 rounded bg-gray-100 text-gray-600'><b>Q${i}: Unattempted</b> (Sahi: ${correct || 'N/A'}) [0]</div>`;
+            statusBadge = "<span class='bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold'>SKIPPED</span>";
+            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200 flex justify-between items-center'><span><b>Q${i}:</b> Skipped (Sahi: ${correct || 'N/A'})</span><span class='text-[10px] bg-gray-300 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
           }
         } else {
           if (user) {
             right++; targetStats.r++;
-            statusText = `<span class='text-blue-600 font-bold'>Attempted: ${user}</span>`;
-            reviewHtml += `<div class='p-1.5 rounded bg-blue-50 border border-blue-200 text-blue-700'><b>Q${i}: Attempted</b> (Option Chosen: ${user})</div>`;
+            statusBadge = `<span class='bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-md font-bold'>OPTION ${user}</span>`;
+            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 cursor-pointer hover:bg-blue-100 flex justify-between items-center'><span><b>Q${i}:</b> Selected (${user})</span><span class='text-[10px] bg-blue-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
           } else {
             unattempted++; targetStats.l++;
-            statusText = "<span class='text-gray-500 font-bold'>Unattempted</span>";
-            reviewHtml += `<div class='p-1.5 rounded bg-gray-100 text-gray-600'><b>Q${i}: Unattempted</b></div>`;
+            statusBadge = "<span class='bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold'>SKIPPED</span>";
+            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200 flex justify-between items-center'><span><b>Q${i}:</b> Skipped</span><span class='text-[10px] bg-gray-300 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
           }
         }
 
         let itemCard = `
-          <div class="p-2 border rounded-lg bg-gray-50 shadow-sm">
-            <div class="flex justify-between items-center">
-              <span class="font-bold text-gray-800">Q${i}</span>
-              <span>${statusText}</span>
+          <div onclick="jumpToQ(${i})" class="p-2.5 border rounded-xl ${cardBgClass} shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-400 transition">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-gray-900 text-xs">Question ${i}</span>
+              ${statusBadge}
             </div>
-            <div class="text-[11px] text-gray-600 mt-0.5">
+            <div class="text-[11px] text-gray-600">
               <b>Chapter:</b> ${info.chapter} <br/>
               <b>Topic:</b> ${info.topic}
             </div>
+            <div class="text-[10px] text-blue-600 font-bold mt-1 text-right">Tap to open question in paper ➔</div>
           </div>
         `;
 
