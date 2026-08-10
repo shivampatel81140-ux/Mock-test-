@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>NEET Mock Test Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -58,11 +58,10 @@
   <!-- Main Test Area -->
   <div id="testArea" class="hidden flex-col items-center pb-48">
     
-    <!-- Scrollable & Slideable Container Box for PDF -->
-    <div class="w-full max-w-3xl overflow-auto border border-gray-300 rounded-xl bg-white shadow-inner my-2 max-h-[72vh] relative">
-      <!-- Inner Scaling Wrapper -->
+    <!-- Scrollable & Pinch-Zoom Container Box for HD PDF -->
+    <div class="w-full max-w-3xl overflow-auto border border-gray-300 rounded-xl bg-white shadow-inner my-2 max-h-[70vh] relative touch-auto">
       <div id="pdfViewerContainer" class="flex flex-col items-center space-y-3 p-2 origin-top-left transition-transform duration-150">
-        <!-- PDF Pages rendered here -->
+        <!-- HD PDF Pages rendered here -->
       </div>
     </div>
 
@@ -94,11 +93,11 @@
         <span id="activeQText" class="text-sm font-bold text-blue-700">Question 1 / 180</span>
         <div class="space-x-1 flex items-center">
           
-          <!-- Box Zoom Controls -->
+          <!-- Box Zoom Controls + Hand Tip -->
           <div class="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-300 mr-1">
-            <button onclick="zoomPaper(-0.2)" class="px-2 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200 rounded">🔍-</button>
+            <button onclick="zoomPaper(-0.25)" class="px-2 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200 rounded">🔍-</button>
             <button onclick="resetZoom()" class="px-1.5 py-1 text-[10px] font-bold text-gray-500 hover:bg-gray-200 rounded">Reset</button>
-            <button onclick="zoomPaper(0.2)" class="px-2 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200 rounded">🔍+</button>
+            <button onclick="zoomPaper(0.25)" class="px-2 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200 rounded">🔍+</button>
           </div>
 
           <button id="showResultBtn" onclick="reopenResultModal()" class="hidden bg-purple-600 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">
@@ -237,7 +236,7 @@
     let currentZoomScale = 1.0;
 
     function zoomPaper(delta) {
-      currentZoomScale = Math.min(Math.max(1.0, currentZoomScale + delta), 3.0);
+      currentZoomScale = Math.min(Math.max(1.0, currentZoomScale + delta), 3.5);
       const container = document.getElementById('pdfViewerContainer');
       container.style.transform = `scale(${currentZoomScale})`;
     }
@@ -352,17 +351,24 @@
         pdfDoc.getPage(pageNum).then(page => {
           const canvas = document.createElement('canvas');
           canvas.id = "pdf-page-" + pageNum;
-          canvas.className = "shadow-md rounded-lg bg-white w-full my-1 border";
+          canvas.className = "shadow-md rounded-lg bg-white my-1 border";
           container.appendChild(canvas);
 
           const ctx = canvas.getContext('2d');
-          const screenWidth = Math.min(window.innerWidth - 16, 768);
-          const unscaledViewport = page.getViewport({ scale: 1.0 });
-          const scale = screenWidth / unscaledViewport.width;
+          const screenWidth = Math.min(window.innerWidth - 24, 768);
+          
+          // High-Res Scaling factor (2.5x crisp sharpness)
+          const hdScale = 2.5; 
+          const unscaledViewport = page.getViewport({ scale: hdScale });
+          const scale = (screenWidth / page.getViewport({ scale: 1.0 }).width) * hdScale;
           const viewport = page.getViewport({ scale: scale });
 
           canvas.height = viewport.height;
           canvas.width = viewport.width;
+          
+          // CSS style fix for perfect sizing inside container box
+          canvas.style.width = screenWidth + 'px';
+          canvas.style.height = (viewport.height / hdScale) + 'px';
 
           page.render({ canvasContext: ctx, viewport: viewport });
         });
