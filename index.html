@@ -1,70 +1,43 @@
 %%writefile app.py
 import streamlit as st
-import pandas as pd
-
-# Custom CSS for mobile friendly scrolling and zoom layout
-st.markdown("""
-    <style>
-    .scrollable-container {
-        width: 100%;
-        overflow-x: auto;
-        overflow-y: auto;
-        white-space: nowrap;
-        background-color: #f8f9fa;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-    }
-    .zoomable-image {
-        max-width: 1000px;
-        width: 100%;
-        height: auto;
-        display: block;
-        margin: 0 auto;
-    }
-    </style>
-""", unsafe_allow_html=True)
 
 st.set_page_config(page_title="NEET Mock Portal", layout="wide")
 st.title("⚡ NEET Mock Test Portal")
 
-if 'stage' not in st.session_state:
-    st.session_state.stage = 'test'
-if 'user_answers' not in st.session_state:
-    st.session_state.user_answers = {}
+st.markdown("""
+    <style>
+    .scrollable-container {
+        width: 1000px;
+        overflow-x: scroll;
+        background: #fff;
+        padding: 10px;
+        border: 2px solid #ccc;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Sample Test Question with proper layout view
 st.subheader("⏱️ Time Left: 02:59:42")
 st.markdown("### Question 1 / 180")
 
-# Scrollable & Zoomable Image Box Container for Mobile View
-st.markdown("**Question Paper View (Aap isse left-right scroll kar sakte hain):**")
+st.markdown("**Question Paper (Aap isse left-right scroll kar sakte hain):**")
 st.markdown("""
-    <div class="scrollable-container">
-        <img src="https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?auto=format&fit=crop&w=1000&q=80" class="zoomable-image" />
+    <div style="width: 100%; overflow-x: auto; border: 1px solid #ccc; padding: 5px;">
+        <div style="width: 1200px;">
+            <img src="https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=1200" width="1200" />
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
 st.write("---")
-st.markdown("#### Select Correct Option:")
+cols = st.columns(4)
+ans = None
+if cols[0].button("A", use_container_width=True): ans = "A"
+if cols[1].button("B", use_container_width=True): ans = "B"
+if cols[2].button("C", use_container_width=True): ans = "C"
+if cols[3].button("D", use_container_width=True): ans = "D"
 
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    if st.button("A", use_container_width=True):
-        st.session_state.user_answers[1] = "A"
-with col2:
-    if st.button("B", use_container_width=True):
-        st.session_state.user_answers[1] = "B"
-with col3:
-    if st.button("C", use_container_width=True):
-        st.session_state.user_answers[1] = "C"
-with col4:
-    if st.button("D", use_container_width=True):
-        st.session_state.user_answers[1] = "D"
+if ans:
+    st.success(f"Selected: {ans}")
 
-if 1 in st.session_state.user_answers:
-    st.success(f"Selected Answer: {st.session_state.user_answers[1]}")
-
-st.write("---")
 if st.button("Submit Final Exam", type="primary", use_container_width=True):
-    st.warning("Test Submitted Successfully!")
+    st.warning("Test Submitted!")
