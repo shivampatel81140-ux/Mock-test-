@@ -1,43 +1,598 @@
-%%writefile app.py
-import streamlit as st
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEET Mock Test Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
 
-st.set_page_config(page_title="NEET Mock Portal", layout="wide")
-st.title("⚡ NEET Mock Test Portal")
-
-st.markdown("""
-    <style>
-    .scrollable-container {
-        width: 1000px;
-        overflow-x: scroll;
-        background: #fff;
-        padding: 10px;
-        border: 2px solid #ccc;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-st.subheader("⏱️ Time Left: 02:59:42")
-st.markdown("### Question 1 / 180")
-
-st.markdown("**Question Paper (Aap isse left-right scroll kar sakte hain):**")
-st.markdown("""
-    <div style="width: 100%; overflow-x: auto; border: 1px solid #ccc; padding: 5px;">
-        <div style="width: 1200px;">
-            <img src="https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=1200" width="1200" />
-        </div>
+  <!-- Header -->
+  <header id="topHeader" class="bg-white p-3 shadow-md flex justify-between items-center sticky top-0 z-40">
+    <div>
+      <h1 class="text-base font-bold text-blue-600">NEET Mock Portal</h1>
+      <p id="qIndicator" class="text-xs font-semibold text-gray-500">Full Paper View</p>
     </div>
-""", unsafe_allow_html=True)
+    <div id="timerBox" class="hidden">
+      <span id="timer" class="text-sm font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">03:00:00</span>
+    </div>
+  </header>
 
-st.write("---")
-cols = st.columns(4)
-ans = None
-if cols[0].button("A", use_container_width=True): ans = "A"
-if cols[1].button("B", use_container_width=True): ans = "B"
-if cols[2].button("C", use_container_width=True): ans = "C"
-if cols[3].button("D", use_container_width=True): ans = "D"
+  <!-- Setup Section -->
+  <div id="setupSection" class="max-w-md mx-auto my-6 bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+    <h2 class="text-xl font-bold mb-4 text-gray-800">Setup Your Test</h2>
+    
+    <!-- Question Paper File Input -->
+    <label class="block text-xs font-bold text-gray-600 mb-1">1. Select Question Paper (PDF):</label>
+    <input type="file" id="pdfInput" accept=".pdf" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700">
+    
+    <!-- Total Questions & Time Setup -->
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <div>
+        <label class="block text-xs font-bold text-gray-600 mb-1">Total Questions:</label>
+        <input type="number" id="totalQInput" value="180" min="1" max="200" class="w-full p-2 border rounded-xl text-xs bg-white font-bold text-blue-800 focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-600 mb-1">Total Time (Minutes):</label>
+        <input type="number" id="timeDurationInput" value="180" min="1" class="w-full p-2 border rounded-xl text-xs bg-white font-bold text-blue-800 focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+    </div>
 
-if ans:
-    st.success(f"Selected: {ans}")
+    <!-- Answer Key File Input -->
+    <label class="block text-xs font-bold text-gray-600 mb-1">2. Upload Answer Key File (PDF / TXT - Optional):</label>
+    <input type="file" id="keyFileInput" accept=".pdf,.txt" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-purple-600 file:text-white file:font-semibold hover:file:bg-purple-700">
+    
+    <div class="text-center my-2 text-xs font-bold text-gray-400">--- YA PHIR PASTE KAREIN ---</div>
 
-if st.button("Submit Final Exam", type="primary", use_container_width=True):
-    st.warning("Test Submitted!")
+    <!-- Manual Answer Key Textarea -->
+    <label class="block text-xs font-bold text-gray-600 mb-1">Paste Answer Key (Comma Separated A,B,C,D...):</label>
+    <textarea id="answerKeyInput" class="w-full h-20 p-3 border rounded-xl mb-4 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Example: A,B,C,D,A,C,D,B..."></textarea>
+    
+    <button id="startBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow-md transition">
+      🚀 Start Test
+    </button>
+  </div>
+
+  <!-- Main Test Area -->
+  <div id="testArea" class="hidden flex-col items-center pb-48">
+    
+    <!-- Scrollable & Slideable Container Box for PDF -->
+    <div class="w-full max-w-3xl overflow-auto border border-gray-300 rounded-xl bg-white shadow-inner my-2 max-h-[72vh] relative">
+      <!-- Inner Scaling Wrapper -->
+      <div id="pdfViewerContainer" class="flex flex-col items-center space-y-3 p-2 origin-top-left transition-transform duration-150">
+        <!-- PDF Pages rendered here -->
+      </div>
+    </div>
+
+    <!-- Full OMR Grid Modal Overlay -->
+    <div id="omrGridModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-lg rounded-2xl p-4 max-h-[80vh] flex flex-col shadow-2xl">
+        <div class="flex justify-between items-center mb-3 border-b pb-2">
+          <h3 id="paletteTitle" class="font-bold text-gray-800 text-sm">Question Palette (1-180)</h3>
+          <button onclick="toggleOmrGrid()" class="text-gray-500 font-bold text-lg hover:text-black">&times;</button>
+        </div>
+        
+        <div class="flex justify-around mb-3 text-xs">
+          <button onclick="jumpToQ(1)" class="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-lg font-bold">Physics (Q1)</button>
+          <button onclick="jumpToQ(46)" class="bg-purple-100 text-purple-800 px-2.5 py-1 rounded-lg font-bold">Chemistry (Q46)</button>
+          <button onclick="jumpToQ(91)" class="bg-green-100 text-green-800 px-2.5 py-1 rounded-lg font-bold">Biology (Q91)</button>
+        </div>
+
+        <div id="gridNumbers" class="grid grid-cols-6 sm:grid-cols-10 gap-2 overflow-y-auto p-1 text-xs"></div>
+
+        <button onclick="toggleOmrGrid()" class="mt-3 w-full bg-gray-200 text-gray-800 py-2 rounded-xl font-bold text-xs">
+          Close Palette
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating Bottom Control Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-2xl z-40 max-w-3xl mx-auto rounded-t-2xl">
+      <div class="flex justify-between items-center mb-2 px-1">
+        <span id="activeQText" class="text-sm font-bold text-blue-700">Question 1 / 180</span>
+        <div class="space-x-1 flex items-center">
+          
+          <!-- Box Zoom Controls -->
+          <div class="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-300 mr-1">
+            <button onclick="zoomPaper(-0.2)" class="px-2 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200 rounded">🔍-</button>
+            <button onclick="resetZoom()" class="px-1.5 py-1 text-[10px] font-bold text-gray-500 hover:bg-gray-200 rounded">Reset</button>
+            <button onclick="zoomPaper(0.2)" class="px-2 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200 rounded">🔍+</button>
+          </div>
+
+          <button id="showResultBtn" onclick="reopenResultModal()" class="hidden bg-purple-600 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">
+            📊 View Result
+          </button>
+          <button onclick="toggleOmrGrid()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 shadow">
+            <span>📑</span> OMR
+          </button>
+          <button onclick="changeQ(-1)" class="bg-gray-200 text-gray-700 text-xs px-2 py-1.5 rounded-lg font-bold">← Prev</button>
+          <button onclick="changeQ(1)" class="bg-blue-600 text-white text-xs px-2 py-1.5 rounded-lg font-bold">Next →</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-4 gap-2 mb-2">
+        <button onclick="selectAns('A')" class="opt-btn bg-gray-100 hover:bg-blue-50 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300">A</button>
+        <button onclick="selectAns('B')" class="opt-btn bg-gray-100 hover:bg-blue-50 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300">B</button>
+        <button onclick="selectAns('C')" class="opt-btn bg-gray-100 hover:bg-blue-50 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300">C</button>
+        <button onclick="selectAns('D')" class="opt-btn bg-gray-100 hover:bg-blue-50 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300">D</button>
+      </div>
+
+      <button onclick="submitTest()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl text-xs font-bold shadow">
+        Submit Final Exam
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Result Modal -->
+  <div id="resultSection" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 overflow-y-auto p-4">
+    <div class="max-w-xl mx-auto my-4 bg-white p-6 rounded-2xl shadow-2xl relative">
+      
+      <button onclick="hideResultModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8 font-bold text-gray-700">&times;</button>
+      
+      <h2 class="text-2xl font-bold mb-1 text-center text-gray-800">NEET Test Result 🎉</h2>
+      <p class="text-center text-xs text-gray-500 mb-4">(Tap on any Question to view it in Paper)</p>
+
+      <div id="scoreDisplay" class="text-3xl font-extrabold text-blue-600 text-center mb-4"></div>
+      
+      <div id="summaryBox" class="flex justify-around bg-blue-50 p-3 rounded-xl mb-4 text-center font-bold text-xs">
+        <div class="text-green-600" id="correctCount">Right: 0</div>
+        <div class="text-red-600" id="wrongCount">Wrong: 0</div>
+        <div class="text-gray-600" id="unattCount">Left: 0</div>
+      </div>
+
+      <!-- Subject Wise Cards -->
+      <h3 class="font-bold text-sm text-gray-700 mb-2">📊 Subject-Wise Overview</h3>
+      <div class="grid grid-cols-3 gap-2 mb-5 text-xs">
+        <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200">
+          <div class="font-bold text-blue-800 mb-1 text-center">Physics</div>
+          <div id="phyScore" class="font-bold text-blue-600 text-center text-sm">0/180</div>
+          <div class="text-[10px] mt-1 text-gray-600">
+            <div>✅ Right: <span id="phyR" class="font-bold text-green-600">0</span></div>
+            <div>❌ Wrong: <span id="phyW" class="font-bold text-red-600">0</span></div>
+            <div>⏸️ Left: <span id="phyL" class="font-bold text-gray-600">0</span></div>
+          </div>
+        </div>
+        <div class="bg-purple-50 p-2.5 rounded-xl border border-purple-200">
+          <div class="font-bold text-purple-800 mb-1 text-center">Chemistry</div>
+          <div id="chemScore" class="font-bold text-purple-600 text-center text-sm">0/180</div>
+          <div class="text-[10px] mt-1 text-gray-600">
+            <div>✅ Right: <span id="chemR" class="font-bold text-green-600">0</span></div>
+            <div>❌ Wrong: <span id="chemW" class="font-bold text-red-600">0</span></div>
+            <div>⏸️ Left: <span id="chemL" class="font-bold text-gray-600">0</span></div>
+          </div>
+        </div>
+        <div class="bg-green-50 p-2.5 rounded-xl border border-green-200">
+          <div class="font-bold text-green-800 mb-1 text-center">Biology</div>
+          <div id="bioScore" class="font-bold text-green-600 text-center text-sm">0/360</div>
+          <div class="text-[10px] mt-1 text-gray-600">
+            <div>✅ Right: <span id="bioR" class="font-bold text-green-600">0</span></div>
+            <div>❌ Wrong: <span id="bioW" class="font-bold text-red-600">0</span></div>
+            <div>⏸️ Left: <span id="bioL" class="font-bold text-gray-600">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEPARATE SUBJECT-WISE ANALYSIS ACCORDIONS -->
+      <h3 class="font-bold text-sm text-gray-700 mb-2">🔍 Subject-Wise Detailed Analysis (Click Q to Inspect)</h3>
+      <div class="space-y-2 mb-6">
+        
+        <!-- Physics Analysis -->
+        <div class="border border-blue-200 rounded-xl overflow-hidden">
+          <button onclick="toggleSubjectBox('phyAnalysisBox', 'phyArrow')" class="w-full bg-blue-50 text-blue-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+            <span>⚛️ Physics Analysis (Q1 - Q45)</span>
+            <span id="phyArrow">▼</span>
+          </button>
+          <div id="phyAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+        </div>
+
+        <!-- Chemistry Analysis -->
+        <div class="border border-purple-200 rounded-xl overflow-hidden">
+          <button onclick="toggleSubjectBox('chemAnalysisBox', 'chemArrow')" class="w-full bg-purple-50 text-purple-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+            <span>🧪 Chemistry Analysis (Q46 - Q90)</span>
+            <span id="chemArrow">▼</span>
+          </button>
+          <div id="chemAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+        </div>
+
+        <!-- Biology Analysis -->
+        <div class="border border-green-200 rounded-xl overflow-hidden">
+          <button onclick="toggleSubjectBox('bioAnalysisBox', 'bioArrow')" class="w-full bg-green-50 text-green-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
+            <span>🧬 Biology Analysis (Q91 - Q180)</span>
+            <span id="bioArrow">▼</span>
+          </button>
+          <div id="bioAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
+        </div>
+
+      </div>
+
+      <!-- Question Review List -->
+      <h3 class="font-bold text-sm text-gray-700 mb-2">📝 Complete Question Review</h3>
+      <div id="reviewGrid" class="max-h-48 overflow-y-auto space-y-1.5 text-xs p-2 border rounded-xl bg-gray-50 mb-4"></div>
+      
+      <div class="flex gap-2">
+        <button onclick="hideResultModal()" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-300 shadow">
+          Review Question Paper
+        </button>
+        <button onclick="location.reload()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow">
+          New Test
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    let pdfDoc = null;
+    let userAnswers = {};
+    let correctAnswers = [];
+    let currentQ = 1;
+    let totalQuestions = 180;
+    let timeRemaining = 10800;
+    let timerInterval = null;
+    let currentZoomScale = 1.0;
+
+    function zoomPaper(delta) {
+      currentZoomScale = Math.min(Math.max(1.0, currentZoomScale + delta), 3.0);
+      const container = document.getElementById('pdfViewerContainer');
+      container.style.transform = `scale(${currentZoomScale})`;
+    }
+
+    function resetZoom() {
+      currentZoomScale = 1.0;
+      const container = document.getElementById('pdfViewerContainer');
+      container.style.transform = `scale(1.0)`;
+    }
+
+    function getSyllabusDetails(qNo) {
+      if (qNo <= 45) {
+        if (qNo <= 10) return { subject: "Physics", chapter: "Kinematics & Mechanics", topic: "Motion in 1D/2D, Laws of Motion" };
+        if (qNo <= 20) return { subject: "Physics", chapter: "Work, Energy & Rotation", topic: "Work-Energy Theorem, Rigid Body Dynamics" };
+        if (qNo <= 30) return { subject: "Physics", chapter: "Electrodynamics", topic: "Electrostatics, Current Electricity, Magnetism" };
+        if (qNo <= 40) return { subject: "Physics", chapter: "Optics & Waves", topic: "Ray Optics, Wave Optics, Oscillations" };
+        return { subject: "Physics", chapter: "Modern Physics & Thermodynamics", topic: "Dual Nature, Atoms, Nuclei, Thermodynamics" };
+      } else if (qNo <= 90) {
+        if (qNo <= 55) return { subject: "Chemistry", chapter: "Physical Chemistry", topic: "Mole Concept, Equilibrium, Electrochemistry" };
+        if (qNo <= 70) return { subject: "Chemistry", chapter: "Inorganic Chemistry", topic: "Periodic Table, Chemical Bonding, p/d/f Block" };
+        if (qNo <= 85) return { subject: "Chemistry", chapter: "Organic Chemistry", topic: "GOC, Hydrocarbons, Biomolecules, Polymers" };
+        return { subject: "Chemistry", chapter: "Coordination & Reaction Kinetics", topic: "Coordination Compounds, Chemical Kinetics" };
+      } else {
+        if (qNo <= 110) return { subject: "Biology (Botany)", chapter: "Cell & Genetics", topic: "Cell Biology, Molecular Basis of Inheritance" };
+        if (qNo <= 130) return { subject: "Biology (Botany)", chapter: "Plant Physiology & Diversity", topic: "Photosynthesis, Respiration, Plant Kingdom" };
+        if (qNo <= 155) return { subject: "Biology (Zoology)", chapter: "Human Physiology", topic: "Digestion, Circulation, Neural Control" };
+        if (qNo <= 170) return { subject: "Biology (Zoology)", chapter: "Reproduction & Evolution", topic: "Human Reproduction, Biotechnology, Evolution" };
+        return { subject: "Biology", chapter: "Ecology & Human Welfare", topic: "Ecosystem, Biodiversity, Environmental Issues" };
+      }
+    }
+
+    // Answer Key File Listener
+    document.getElementById('keyFileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.name.endsWith('.txt')) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          document.getElementById('answerKeyInput').value = evt.target.result;
+        };
+        reader.readAsText(file);
+      } else if (file.name.endsWith('.pdf')) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const typedarray = new Uint8Array(evt.target.result);
+          pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+            let countPromises = [];
+            for (let i = 1; i <= pdf.numPages; i++) {
+              countPromises.push(pdf.getPage(i).then(page => {
+                return page.getTextContent().then(textContent => {
+                  return textContent.items.map(item => item.str).join(" ");
+                });
+              }));
+            }
+            Promise.all(countPromises).then(pagesText => {
+              document.getElementById('answerKeyInput').value = pagesText.join(" ");
+            });
+          });
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    });
+
+    document.getElementById('startBtn').onclick = () => {
+      const fileInput = document.getElementById('pdfInput');
+      const keyRaw = document.getElementById('answerKeyInput').value;
+
+      if (!fileInput.files.length) {
+        alert("Kripya NEET Question Paper (PDF) select karein!");
+        return;
+      }
+
+      totalQuestions = parseInt(document.getElementById('totalQInput').value) || 180;
+      let durationMins = parseInt(document.getElementById('timeDurationInput').value) || totalQuestions;
+      timeRemaining = durationMins * 60;
+
+      const matches = keyRaw.match(/[A-Da-d]/g);
+      if (matches && matches.length > 0) {
+        correctAnswers = matches.map(x => x.toUpperCase()).slice(0, totalQuestions);
+      } else {
+        correctAnswers = [];
+      }
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        const typedarray = new Uint8Array(e.target.result);
+        pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+          pdfDoc = pdf;
+          document.getElementById('setupSection').classList.add('hidden');
+          document.getElementById('testArea').classList.remove('hidden');
+          document.getElementById('testArea').classList.add('flex');
+          document.getElementById('timerBox').classList.remove('hidden');
+
+          renderAllPages();
+          updateActiveQ();
+          startTimer();
+        }).catch(err => {
+          alert("PDF render nahi ho saki: " + err.message);
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
+    function renderAllPages() {
+      const container = document.getElementById('pdfViewerContainer');
+      container.innerHTML = '';
+
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        pdfDoc.getPage(pageNum).then(page => {
+          const canvas = document.createElement('canvas');
+          canvas.id = "pdf-page-" + pageNum;
+          canvas.className = "shadow-md rounded-lg bg-white w-full my-1 border";
+          container.appendChild(canvas);
+
+          const ctx = canvas.getContext('2d');
+          const screenWidth = Math.min(window.innerWidth - 16, 768);
+          const unscaledViewport = page.getViewport({ scale: 1.0 });
+          const scale = screenWidth / unscaledViewport.width;
+          const viewport = page.getViewport({ scale: scale });
+
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          page.render({ canvasContext: ctx, viewport: viewport });
+        });
+      }
+    }
+
+    function toggleOmrGrid() {
+      const modal = document.getElementById('omrGridModal');
+      if (modal.classList.contains('hidden')) {
+        buildOmrGrid();
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function buildOmrGrid() {
+      document.getElementById('paletteTitle').innerText = `Question Palette (1-${totalQuestions})`;
+      const container = document.getElementById('gridNumbers');
+      container.innerHTML = '';
+
+      for (let i = 1; i <= totalQuestions; i++) {
+        const btn = document.createElement('button');
+        btn.innerText = i;
+        
+        let btnStyle = "p-2 rounded-lg font-bold text-center border text-xs ";
+        if (i === currentQ) {
+          btnStyle += "bg-blue-600 text-white border-blue-700 ring-2 ring-blue-300";
+        } else if (userAnswers[i]) {
+          btnStyle += "bg-green-500 text-white border-green-600";
+        } else {
+          btnStyle += "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200";
+        }
+
+        btn.className = btnStyle;
+        btn.onclick = () => jumpToQ(i);
+        container.appendChild(btn);
+      }
+    }
+
+    function jumpToQ(qNum) {
+      if (qNum > totalQuestions) qNum = totalQuestions;
+      currentQ = qNum;
+      updateActiveQ();
+      document.getElementById('omrGridModal').classList.add('hidden');
+      hideResultModal();
+
+      if (pdfDoc && pdfDoc.numPages) {
+        let estimatedPage = Math.min(Math.ceil((qNum / totalQuestions) * pdfDoc.numPages), pdfDoc.numPages);
+        let targetCanvas = document.getElementById("pdf-page-" + estimatedPage);
+        if (targetCanvas) {
+          targetCanvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
+
+    function selectAns(ans) {
+      userAnswers[currentQ] = ans;
+      updateActiveQ();
+    }
+
+    function changeQ(dir) {
+      if (currentQ + dir >= 1 && currentQ + dir <= totalQuestions) {
+        currentQ += dir;
+        updateActiveQ();
+      }
+    }
+
+    function updateActiveQ() {
+      document.getElementById('activeQText').innerText = `Question ${currentQ} / ${totalQuestions} (Selected: ${userAnswers[currentQ] || 'None'})`;
+      document.getElementById('qIndicator').innerText = `Q ${currentQ} Active`;
+
+      const buttons = document.querySelectorAll('.opt-btn');
+      buttons.forEach(btn => {
+        if (userAnswers[currentQ] === btn.innerText) {
+          btn.className = "opt-btn bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow";
+        } else {
+          btn.className = "opt-btn bg-gray-100 text-gray-800 font-bold py-2.5 rounded-xl border border-gray-300";
+        }
+      });
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        let h = Math.floor(timeRemaining / 3600);
+        let m = Math.floor((timeRemaining % 3600) / 60);
+        let s = timeRemaining % 60;
+        document.getElementById('timer').innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          submitTest();
+        }
+      }, 1000);
+    }
+
+    function toggleSubjectBox(boxId, arrowId) {
+      const box = document.getElementById(boxId);
+      const arrow = document.getElementById(arrowId);
+      if (box.classList.contains('hidden')) {
+        box.classList.remove('hidden');
+        arrow.innerText = '▲';
+      } else {
+        box.classList.add('hidden');
+        arrow.innerText = '▼';
+      }
+    }
+
+    function hideResultModal() {
+      document.getElementById('resultSection').classList.add('hidden');
+      document.getElementById('showResultBtn').classList.remove('hidden');
+    }
+
+    function reopenResultModal() {
+      document.getElementById('resultSection').classList.remove('hidden');
+    }
+
+    function submitTest() {
+      if (!confirm('Kya aap exam submit karna chahte hain?')) return;
+
+      clearInterval(timerInterval);
+      document.getElementById('timerBox').classList.add('hidden');
+      document.getElementById('resultSection').classList.remove('hidden');
+      document.getElementById('showResultBtn').classList.remove('hidden');
+
+      let hasKey = correctAnswers.length > 0;
+      let score = 0, right = 0, wrong = 0, unattempted = 0;
+      let reviewHtml = "";
+
+      let phyHtml = "", chemHtml = "", bioHtml = "";
+
+      let phyStats = { score: 0, r: 0, w: 0, l: 0 };
+      let chemStats = { score: 0, r: 0, w: 0, l: 0 };
+      let bioStats = { score: 0, r: 0, w: 0, l: 0 };
+
+      for (let i = 1; i <= totalQuestions; i++) {
+        let user = userAnswers[i];
+        let correct = hasKey ? correctAnswers[i - 1] : null;
+        let info = getSyllabusDetails(i);
+
+        let statusBadge = "";
+        let cardBgClass = "bg-gray-50 border-gray-200";
+        let targetStats = (i <= 45) ? phyStats : (i <= 90) ? chemStats : bioStats;
+
+        if (hasKey) {
+          if (user) {
+            if (correct && user === correct) {
+              score += 4; right++; targetStats.score += 4; targetStats.r++;
+              statusBadge = "<span class='bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded-md font-bold'>RIGHT (+4)</span>";
+              cardBgClass = "bg-green-50/50 border-green-200";
+              reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-green-50 border border-green-200 text-green-800 cursor-pointer hover:bg-green-100 flex justify-between items-center'><span><b>Q${i}:</b> Right (Your: ${user} | Sahi: ${correct})</span><span class='text-[10px] bg-green-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
+            } else {
+              score -= 1; wrong++; targetStats.score -= 1; targetStats.w++;
+              statusBadge = "<span class='bg-red-100 text-red-800 text-[10px] px-2 py-0.5 rounded-md font-bold'>WRONG (-1)</span>";
+              cardBgClass = "bg-red-50/50 border-red-200";
+              reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-red-50 border border-red-200 text-red-800 cursor-pointer hover:bg-red-100 flex justify-between items-center'><span><b>Q${i}:</b> Wrong ❌ (Your: ${user} | Sahi: ${correct || 'N/A'})</span><span class='text-[10px] bg-red-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
+            }
+          } else {
+            unattempted++; targetStats.l++;
+            statusBadge = "<span class='bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold'>SKIPPED</span>";
+            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200 flex justify-between items-center'><span><b>Q${i}:</b> Skipped (Sahi: ${correct || 'N/A'})</span><span class='text-[10px] bg-gray-300 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
+          }
+        } else {
+          if (user) {
+            right++; targetStats.r++;
+            statusBadge = `<span class='bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-md font-bold'>OPTION ${user}</span>`;
+            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 cursor-pointer hover:bg-blue-100 flex justify-between items-center'><span><b>Q${i}:</b> Selected (${user})</span><span class='text-[10px] bg-blue-200 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
+          } else {
+            unattempted++; targetStats.l++;
+            statusBadge = "<span class='bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold'>SKIPPED</span>";
+            reviewHtml += `<div onclick="jumpToQ(${i})" class='p-2 rounded-lg bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200 flex justify-between items-center'><span><b>Q${i}:</b> Skipped</span><span class='text-[10px] bg-gray-300 px-1.5 py-0.5 rounded font-bold'>View Paper ➔</span></div>`;
+          }
+        }
+
+        let itemCard = `
+          <div onclick="jumpToQ(${i})" class="p-2.5 border rounded-xl ${cardBgClass} shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-400 transition">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-gray-900 text-xs">Question ${i}</span>
+              ${statusBadge}
+            </div>
+            <div class="text-[11px] text-gray-600">
+              <b>Chapter:</b> ${info.chapter} <br/>
+              <b>Topic:</b> ${info.topic}
+            </div>
+            <div class="text-[10px] text-blue-600 font-bold mt-1 text-right">Tap to open question in paper ➔</div>
+          </div>
+        `;
+
+        if (i <= 45) phyHtml += itemCard;
+        else if (i <= 90) chemHtml += itemCard;
+        else bioHtml += itemCard;
+      }
+
+      if (hasKey) {
+        document.getElementById('scoreDisplay').innerText = `Marks: ${score} / ${totalQuestions * 4}`;
+        document.getElementById('correctCount').innerText = `Right: ${right}`;
+        document.getElementById('wrongCount').innerText = `Wrong: ${wrong}`;
+        document.getElementById('unattCount').innerText = `Left: ${unattempted}`;
+
+        document.getElementById('phyScore').innerText = `${phyStats.score}/180`;
+        document.getElementById('chemScore').innerText = `${chemStats.score}/180`;
+        document.getElementById('bioScore').innerText = `${bioStats.score}/360`;
+      } else {
+        document.getElementById('scoreDisplay').innerText = `Attempted: ${right} / ${totalQuestions}`;
+        document.getElementById('summaryBox').innerHTML = `<div class='text-blue-600 text-xs font-bold'>⚠️ Answer key missing. Displaying Attempt Summary.</div>`;
+
+        document.getElementById('phyScore').innerText = `${phyStats.r} Attempted`;
+        document.getElementById('chemScore').innerText = `${chemStats.r} Attempted`;
+        document.getElementById('bioScore').innerText = `${bioStats.r} Attempted`;
+      }
+
+      document.getElementById('phyR').innerText = phyStats.r;
+      document.getElementById('phyW').innerText = phyStats.w;
+      document.getElementById('phyL').innerText = phyStats.l;
+
+      document.getElementById('chemR').innerText = chemStats.r;
+      document.getElementById('chemW').innerText = chemStats.w;
+      document.getElementById('chemL').innerText = chemStats.l;
+
+      document.getElementById('bioR').innerText = bioStats.r;
+      document.getElementById('bioW').innerText = bioStats.w;
+      document.getElementById('bioL').innerText = bioStats.l;
+
+      document.getElementById('phyAnalysisBox').innerHTML = phyHtml;
+      document.getElementById('chemAnalysisBox').innerHTML = chemHtml;
+      document.getElementById('bioAnalysisBox').innerHTML = bioHtml;
+
+      document.getElementById('reviewGrid').innerHTML = reviewHtml;
+    }
+  </script>
+</body>
+</html>
