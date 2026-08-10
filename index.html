@@ -9,7 +9,6 @@
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
 
-  <!-- Header -->
   <header id="topHeader" class="bg-white p-3 shadow-md flex justify-between items-center sticky top-0 z-40">
     <div>
       <h1 class="text-base font-bold text-blue-600">NEET Mock Portal</h1>
@@ -20,15 +19,12 @@
     </div>
   </header>
 
-  <!-- Setup Section -->
   <div id="setupSection" class="max-w-md mx-auto my-6 bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
     <h2 class="text-xl font-bold mb-4 text-gray-800">Setup Your Test</h2>
     
-    <!-- Question Paper File Input -->
     <label class="block text-xs font-bold text-gray-600 mb-1">1. Select Question Paper (PDF):</label>
     <input type="file" id="pdfInput" accept=".pdf" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700">
     
-    <!-- Total Questions & Time Setup -->
     <div class="grid grid-cols-2 gap-2 mb-3">
       <div>
         <label class="block text-xs font-bold text-gray-600 mb-1">Total Questions:</label>
@@ -40,13 +36,11 @@
       </div>
     </div>
 
-    <!-- Answer Key File Input -->
     <label class="block text-xs font-bold text-gray-600 mb-1">2. Upload Answer Key File (PDF / TXT - Optional):</label>
     <input type="file" id="keyFileInput" accept=".pdf,.txt" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-purple-600 file:text-white file:font-semibold hover:file:bg-purple-700">
     
     <div class="text-center my-2 text-xs font-bold text-gray-400">--- YA PHIR PASTE KAREIN ---</div>
 
-    <!-- Manual Answer Key Textarea -->
     <label class="block text-xs font-bold text-gray-600 mb-1">Paste Answer Key (Comma Separated A,B,C,D...):</label>
     <textarea id="answerKeyInput" class="w-full h-20 p-3 border rounded-xl mb-4 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Example: A,B,C,D,A,C,D,B..."></textarea>
     
@@ -55,17 +49,13 @@
     </button>
   </div>
 
-  <!-- Main Test Area -->
   <div id="testArea" class="hidden flex-col items-center pb-48">
     
-    <!-- Scrollable & Pinch-Zoom Container Box for HD PDF -->
-    <div class="w-full max-w-3xl overflow-auto border border-gray-300 rounded-xl bg-white shadow-inner my-2 max-h-[70vh] relative touch-auto">
-      <div id="pdfViewerContainer" class="flex flex-col items-center space-y-3 p-2 origin-top-left transition-transform duration-150">
-        <!-- HD PDF Pages rendered here -->
-      </div>
+    <div class="w-full max-w-3xl overflow-auto border border-gray-300 rounded-xl bg-white shadow-inner my-2 max-h-[70vh] relative">
+      <div id="pdfViewerContainer" class="flex flex-col items-center space-y-3 p-2 transition-transform duration-150">
+        </div>
     </div>
 
-    <!-- Full OMR Grid Modal Overlay -->
     <div id="omrGridModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div class="bg-white w-full max-w-lg rounded-2xl p-4 max-h-[80vh] flex flex-col shadow-2xl">
         <div class="flex justify-between items-center mb-3 border-b pb-2">
@@ -87,13 +77,11 @@
       </div>
     </div>
 
-    <!-- Floating Bottom Control Bar -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-2xl z-40 max-w-3xl mx-auto rounded-t-2xl">
       <div class="flex justify-between items-center mb-2 px-1">
         <span id="activeQText" class="text-sm font-bold text-blue-700">Question 1 / 180</span>
         <div class="space-x-1 flex items-center">
           
-          <!-- Box Zoom Controls + Hand Tip -->
           <div class="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-300 mr-1">
             <button onclick="zoomPaper(-0.25)" class="px-2 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200 rounded">🔍-</button>
             <button onclick="resetZoom()" class="px-1.5 py-1 text-[10px] font-bold text-gray-500 hover:bg-gray-200 rounded">Reset</button>
@@ -125,7 +113,6 @@
 
   </div>
 
-  <!-- Result Modal -->
   <div id="resultSection" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 overflow-y-auto p-4">
     <div class="max-w-xl mx-auto my-4 bg-white p-6 rounded-2xl shadow-2xl relative">
       
@@ -142,7 +129,6 @@
         <div class="text-gray-600" id="unattCount">Left: 0</div>
       </div>
 
-      <!-- Subject Wise Cards -->
       <h3 class="font-bold text-sm text-gray-700 mb-2">📊 Subject-Wise Overview</h3>
       <div class="grid grid-cols-3 gap-2 mb-5 text-xs">
         <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200">
@@ -174,11 +160,9 @@
         </div>
       </div>
 
-      <!-- SEPARATE SUBJECT-WISE ANALYSIS ACCORDIONS -->
       <h3 class="font-bold text-sm text-gray-700 mb-2">🔍 Subject-Wise Detailed Analysis (Click Q to Inspect)</h3>
       <div class="space-y-2 mb-6">
         
-        <!-- Physics Analysis -->
         <div class="border border-blue-200 rounded-xl overflow-hidden">
           <button onclick="toggleSubjectBox('phyAnalysisBox', 'phyArrow')" class="w-full bg-blue-50 text-blue-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
             <span>⚛️ Physics Analysis (Q1 - Q45)</span>
@@ -187,7 +171,6 @@
           <div id="phyAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
         </div>
 
-        <!-- Chemistry Analysis -->
         <div class="border border-purple-200 rounded-xl overflow-hidden">
           <button onclick="toggleSubjectBox('chemAnalysisBox', 'chemArrow')" class="w-full bg-purple-50 text-purple-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
             <span>🧪 Chemistry Analysis (Q46 - Q90)</span>
@@ -196,7 +179,6 @@
           <div id="chemAnalysisBox" class="hidden p-3 bg-white max-h-60 overflow-y-auto text-xs space-y-2 border-t"></div>
         </div>
 
-        <!-- Biology Analysis -->
         <div class="border border-green-200 rounded-xl overflow-hidden">
           <button onclick="toggleSubjectBox('bioAnalysisBox', 'bioArrow')" class="w-full bg-green-50 text-green-900 px-4 py-2.5 font-bold text-xs flex justify-between items-center">
             <span>🧬 Biology Analysis (Q91 - Q180)</span>
@@ -207,7 +189,6 @@
 
       </div>
 
-      <!-- Question Review List -->
       <h3 class="font-bold text-sm text-gray-700 mb-2">📝 Complete Question Review</h3>
       <div id="reviewGrid" class="max-h-48 overflow-y-auto space-y-1.5 text-xs p-2 border rounded-xl bg-gray-50 mb-4"></div>
       
@@ -239,12 +220,14 @@
       currentZoomScale = Math.min(Math.max(1.0, currentZoomScale + delta), 3.5);
       const container = document.getElementById('pdfViewerContainer');
       container.style.transform = `scale(${currentZoomScale})`;
+      container.style.transformOrigin = 'top center';
     }
 
     function resetZoom() {
       currentZoomScale = 1.0;
       const container = document.getElementById('pdfViewerContainer');
       container.style.transform = `scale(1.0)`;
+      container.style.transformOrigin = 'top center';
     }
 
     function getSyllabusDetails(qNo) {
